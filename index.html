@@ -73,6 +73,8 @@
   .toolbar .count{margin-left:auto; font-size:13px; color:var(--muted); font-weight:700}
   .btn{border:none; cursor:pointer; padding:8px 13px; border-radius:10px; font-weight:700; font-size:13px; background:#efeaf8; color:var(--ink); transition:.15s}
   .btn:hover{background:#e6def5}
+  .btn.subtle{background:transparent; color:var(--muted); box-shadow:inset 0 0 0 1.5px #e6def5}
+  .btn.subtle:hover{background:#f5f1fb; color:var(--ink)}
   .sectionhdr{font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--accent-d); margin:18px 2px 8px}
   .wordgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
   @media (max-width:640px){ .wordgrid{grid-template-columns:1fr} }
@@ -102,6 +104,7 @@
   .dirlist{display:flex; flex-direction:column; gap:12px; margin-top:8px}
   .dircard{display:flex; align-items:center; gap:14px; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:16px 18px; cursor:pointer; box-shadow:0 4px 16px rgba(90,70,150,.05); transition:.15s}
   .dircard:hover{border-color:#e3d5f2; transform:translateY(-2px)}
+  .dircard.on{border-color:var(--accent-d); background:#faf7ff}
   .dircard .di{font-size:26px}
   .dircard .dtx{flex:1}
   .dircard .dt{font-weight:800; font-size:16px}
@@ -343,8 +346,9 @@ let state = {
   pstep:null,              // practice flow: null (word list) | 'exclude' | 'direction' | 'quiz'
   pdir:"es2en",            // 'es2en' | 'en2es' | 'mix'
   vcat:"all",              // verb category: 'all' | 'regular' | 'irregular' | 'boot'
-  cstep:null,              // conjugation flow: null (list) | 'exclude' | 'display' | 'quiz'
+  cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
   cdisp:"es",              // prompt language: 'es' | 'en' | 'mix'
+  ccover:"all",            // pronouns per verb: 'all' (all six) | 'mixed' (one each)
   cselected:null,          // which verbs are IN the conjugation quiz
   csession:null,
   selected:null,           // {key:true}  (which words are IN the quiz; default all)
@@ -448,28 +452,58 @@ function conjugate(v){
   if(reflexive){ const o={}; for(const k in f) o[k]=_RP[k]+" "+f[k]; return o; }
   return f;
 }
-// Subjects — pronouns (ES + EN) plus people, all mapping to a verb form.
+// The six endings. Every verb in a quiz gets asked in all six.
+const FORMS = ["yo","tu","el","nos","vos","ellos"];
+// Subjects — pronouns (ES + EN) plus real people, all mapping to a verb form.
+// Grouped by form so the quiz can guarantee coverage of every ending.
 const SUBJECTS = [
   {es:"yo", en:"I", form:"yo"},
+
   {es:"tú", en:"you", form:"tu"},
+
   {es:"él", en:"he", form:"el"},
   {es:"ella", en:"she", form:"el"},
   {es:"usted", en:"you (formal)", form:"el"},
-  {es:"nosotros/as", en:"we", form:"nos"},
-  {es:"vosotros/as", en:"you all", form:"vos"},
-  {es:"ellos", en:"they", form:"ellos"},
-  {es:"ellas", en:"they (f.)", form:"ellos"},
-  {es:"ustedes", en:"you all (formal)", form:"ellos"},
+  {es:"mi primo", en:"my cousin", form:"el"},
+  {es:"su papá", en:"his dad", form:"el"},
+  {es:"su mamá", en:"her mom", form:"el"},
+  {es:"mi tía", en:"my aunt", form:"el"},
+  {es:"mi tío", en:"my uncle", form:"el"},
+  {es:"mi hermana", en:"my sister", form:"el"},
   {es:"mi abuelo", en:"my grandpa", form:"el"},
   {es:"mi abuela", en:"my grandma", form:"el"},
+  {es:"el profesor", en:"the teacher", form:"el"},
   {es:"la señora García", en:"Mrs. García", form:"el"},
   {es:"el señor López", en:"Mr. López", form:"el"},
   {es:"la señorita Ruiz", en:"Ms. Ruiz", form:"el"},
   {es:"María", en:"María", form:"el"},
+  {es:"Carlos", en:"Carlos", form:"el"},
+
+  {es:"nosotros/as", en:"we", form:"nos"},
+  {es:"mi hermano y yo", en:"my brother and I", form:"nos"},
+  {es:"mis amigos y yo", en:"my friends and I", form:"nos"},
+  {es:"mi primo y yo", en:"my cousin and I", form:"nos"},
+  {es:"mi familia y yo", en:"my family and I", form:"nos"},
+
+  {es:"vosotros/as", en:"you all (Spain)", form:"vos"},
+  {es:"vosotras", en:"you all (f., Spain)", form:"vos"},
+
+  {es:"ellos", en:"they", form:"ellos"},
+  {es:"ellas", en:"they (f.)", form:"ellos"},
+  {es:"ustedes", en:"you all (formal)", form:"ellos"},
+  {es:"mis primos", en:"my cousins", form:"ellos"},
+  {es:"sus papás", en:"their parents", form:"ellos"},
+  {es:"mis hermanos", en:"my siblings", form:"ellos"},
+  {es:"mis tíos", en:"my aunt and uncle", form:"ellos"},
   {es:"mis abuelos", en:"my grandparents", form:"ellos"},
+  {es:"mis amigos", en:"my friends", form:"ellos"},
   {es:"los estudiantes", en:"the students", form:"ellos"},
+  {es:"los niños", en:"the kids", form:"ellos"},
+  {es:"las chicas", en:"the girls", form:"ellos"},
   {es:"Ana y Luis", en:"Ana and Luis", form:"ellos"},
 ];
+const SUBJ_BY_FORM = FORMS.reduce((m,f)=>{ m[f]=SUBJECTS.filter(s=>s.form===f); return m; }, {});
+const pickSubj = form => { const p=SUBJ_BY_FORM[form]; return p[Math.floor(Math.random()*p.length)]; };
 const VCAT_LABEL={all:"All verbs", regular:"Regular verbs", irregular:"Irregular verbs", boot:"Boot verbs"};
 const _reg=(inf,en)=>({inf,en,type:"regular"});
 const _boot=(inf,en,change)=>({inf,en,type:"boot",change});
@@ -641,12 +675,13 @@ function renderExclude(c){
     <button class="back" id="pback">‹ Back</button>
     <h2 class="ptitle">Anything you don't want quizzed?</h2>
     <p class="psub">Everything's in by default. Tap a word to <b>leave it out</b>.</p>
-    <div class="toolbar"><button class="btn" id="inclAll">Include all</button><span class="count">${incl} of ${words.length} in</span></div>
+    <div class="toolbar"><button class="btn" id="inclAll">Select all</button><button class="btn subtle" id="exclAll">Deselect all</button><span class="count">${incl} of ${words.length} in</span></div>
     ${groupedWords(true)}
     <button class="btn practicebtn" id="toDir" ${incl?'':'disabled'}>Continue →</button>`;
   c.querySelectorAll(".wcard[data-k]").forEach(el=>el.onclick=()=>{ const k=el.dataset.k; state.selected[k]=!state.selected[k]; render(); });
   c.querySelector("#pback").onclick=()=>{ state.pstep=null; render(); };
   c.querySelector("#inclAll").onclick=()=>{ words.forEach(w=>state.selected[key(w)]=true); render(); };
+  c.querySelector("#exclAll").onclick=()=>{ words.forEach(w=>state.selected[key(w)]=false); render(); };
   c.querySelector("#toDir").onclick=()=>{ state.pstep="direction"; render(); };
 }
 
@@ -805,6 +840,7 @@ function renderVerbHome(c){
 /* -------- Conjugation practice flow -------- */
 function renderConjugate(c){
   if(state.cstep==='exclude') return renderCExclude(c);
+  if(state.cstep==='coverage') return renderCCoverage(c);
   if(state.cstep==='display') return renderCDisplay(c);
   if(state.cstep==='quiz') return renderCQuiz(c);
   return renderCList(c);
@@ -823,32 +859,64 @@ function renderCExclude(c){
   let h=`<button class="back" id="cback">‹ Back</button>
     <h2 class="ptitle">Which verbs?</h2>
     <p class="psub">All in by default. Tap a verb to <b>leave it out</b>.</p>
-    <div class="toolbar"><button class="btn" id="cinclAll">Include all</button><span class="count">${incl} of ${verbs.length} in</span></div>
+    <div class="toolbar"><button class="btn" id="cinclAll">Select all</button><button class="btn subtle" id="cexclAll">Deselect all</button><span class="count">${incl} of ${verbs.length} in</span></div>
     <div class="wordgrid">`;
   verbs.forEach(v=>{ const on=cIsSel(v);
     h+=`<div class="wcard ${on?'on':'off'}" data-inf="${esc(v.inf)}"><span class="box">${on?'✓':''}</span><div class="txt"><div class="es">${esc(v.inf)}</div><div class="en">${esc(v.en)}</div></div></div>`; });
-  h+=`</div><button class="practicebtn" id="cToDisp" ${incl?'':'disabled'}>Continue →</button>`;
+  h+=`</div><button class="practicebtn" id="cToCover" ${incl?'':'disabled'}>Continue →</button>`;
   c.innerHTML=h;
   c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!state.cselected[el.dataset.inf]; render(); });
   c.querySelector("#cback").onclick=()=>{ state.cstep=null; render(); };
   c.querySelector("#cinclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=true); render(); };
-  c.querySelector("#cToDisp").onclick=()=>{ state.cstep='display'; render(); };
+  c.querySelector("#cexclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=false); render(); };
+  c.querySelector("#cToCover").onclick=()=>{ state.cstep='coverage'; render(); };
+}
+function renderCCoverage(c){
+  const n=cIncluded().length;
+  const opts=[
+    ['all','🔁','All pronouns',`Every verb six times, once per ending — yo, tú, él, nosotros, vosotros, ellos. ${n*6} question${n*6===1?'':'s'}.`],
+    ['mixed','🎲','Mixed review',`One pronoun per verb, dealt evenly across the six endings. ${n} question${n===1?'':'s'}.`],
+  ];
+  c.innerHTML=`<button class="back" id="cback">‹ Back</button>
+    <h2 class="ptitle">How many pronouns per verb?</h2>
+    <p class="psub">All pronouns drills every ending. Mixed review is the quick pass.</p>
+    <div class="dirlist">${opts.map(([k,ic,t,d])=>`<button class="dircard${state.ccover===k?' on':''}" data-cover="${k}"><span class="di">${ic}</span><div class="dtx"><div class="dt">${t}</div><div class="dd">${d}</div></div><span class="go">→</span></button>`).join('')}</div>`;
+  c.querySelector("#cback").onclick=()=>{ state.cstep='exclude'; render(); };
+  c.querySelectorAll("[data-cover]").forEach(b=>b.onclick=()=>{ state.ccover=b.dataset.cover; state.cstep='display'; render(); });
 }
 function renderCDisplay(c){
   const opts=[['es','🇪🇸','Spanish','Prompts like "ella · preferir"'],['en','🇬🇧','English','Prompts like "she · to prefer"'],['mix','🔀','Mix','A random mix of both']];
   c.innerHTML=`<button class="back" id="cback">‹ Back</button>
     <h2 class="ptitle">Show the prompts in…</h2>
-    <p class="psub">You always type the Spanish conjugation.</p>
+    <p class="psub">You always type the Spanish conjugation. ${state.ccover==='all'?'Each verb comes up six times — once for every ending.':'One pronoun per verb.'}</p>
     <div class="dirlist">${opts.map(([k,ic,t,d])=>`<button class="dircard" data-disp="${k}"><span class="di">${ic}</span><div class="dtx"><div class="dt">${t}</div><div class="dd">${d}</div></div><span class="go">→</span></button>`).join('')}</div>`;
-  c.querySelector("#cback").onclick=()=>{ state.cstep='exclude'; render(); };
+  c.querySelector("#cback").onclick=()=>{ state.cstep='coverage'; render(); };
   c.querySelectorAll("[data-disp]").forEach(b=>b.onclick=()=>{ state.cdisp=b.dataset.disp; startCQuiz(); state.cstep='quiz'; render(); });
 }
 function startCQuiz(){
-  const q=shuffle(cIncluded()).map(v=>{
-    const subj=SUBJECTS[Math.floor(Math.random()*SUBJECTS.length)];
-    const lang=state.cdisp==='mix' ? (Math.random()<0.5?'es':'en') : state.cdisp;
-    return { v, subj, lang };
-  });
+  const pickLang = () => state.cdisp==='mix' ? (Math.random()<0.5?'es':'en') : state.cdisp;
+  const verbs = cIncluded();
+  let q;
+  if(state.ccover==='mixed'){
+    // One pronoun per verb. The ending is dealt from a shuffled cycle of all six
+    // rather than picked at random, so even a short review spreads across the
+    // endings instead of leaning on whichever ones have the most subjects.
+    let cycle=[];
+    q = shuffle(verbs).map(v=>{
+      if(!cycle.length) cycle=shuffle(FORMS);
+      const form=cycle.pop();
+      return { v, subj: pickSubj(form), lang: pickLang() };
+    });
+  }else{
+    // Every verb is asked once per ending — yo, tú, él, nosotros, vosotros, ellos —
+    // with a different subject drawn from that ending's group each time.
+    const perVerb = verbs.map(v =>
+      shuffle(FORMS).map(form => ({ v, subj: pickSubj(form), lang: pickLang() }))
+    );
+    // Deal one round at a time so the same verb never comes up back-to-back.
+    q=[];
+    for(let r=0; r<FORMS.length; r++) shuffle(perVerb.map(list=>list[r])).forEach(item=>q.push(item));
+  }
   state.csession={ queue:q, i:0, correct:0, wrong:[], result:null, curWrong:false };
 }
 function renderCQuiz(c){
