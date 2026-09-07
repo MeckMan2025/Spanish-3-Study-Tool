@@ -332,11 +332,17 @@ const DATA = {
 };
 
 /* ============================ STATE ============================ */
-// Weekly groupings from the packet: Semana 1 = the question words (Las
-// Preguntas), Semana 2 = the verbs (Los Verbos). Everything stays in "All".
+// Weekly groupings from the packet. A set can declare its week outright with
+// `week:3`; the two original sets are matched by name so nothing had to change
+// when this became data-driven. A word can override its set with its own
+// `week:`. Untagged words are in "All" only. Add a week by adding a set with
+// a `week:` — the hub picks it up on its own.
 DATA.units.forEach(u=>u.sets.forEach(s=>{
-  const wk = /pregunta/i.test(s.name) ? 1 : /verbo/i.test(s.name) ? 2 : null;
-  if(wk) s.words.forEach(w=>{ w.week=wk; });
+  const wk = s.week != null ? s.week
+    : /pregunta/i.test(s.name) ? 1
+    : /verbo/i.test(s.name) ? 2
+    : null;
+  if(wk != null) s.words.forEach(w=>{ if(w.week == null) w.week = wk; });
 }));
 
 const LS = "spanish3-tool-v1";
@@ -368,7 +374,14 @@ function save(){ localStorage.setItem(LS, JSON.stringify({unitIdx:state.unitIdx,
 /* ============================ HELPERS ============================ */
 const unit = ()=>DATA.units[state.unitIdx];
 const key = w => unit().id+"::"+w.es;
-const weekNum = label => label==="Semana 1" ? 1 : label==="Semana 2" ? 2 : null;
+const weekNum = label => { const m=/^Semana\s+(\d+)$/.exec(label||""); return m ? +m[1] : null; };
+// Every week number that actually has words, in order.
+function weeksInUnit(){
+  const seen=new Set();
+  unit().sets.forEach(s=>s.words.forEach(w=>{ if(w.week!=null) seen.add(w.week); }));
+  return [...seen].sort((a,b)=>a-b);
+}
+const WEEK_ICONS=["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
 function allWords(){ // words for the current week, tagged with their set name
   const wk = weekNum(state.week);   // null = All
   const out=[];
@@ -794,8 +807,7 @@ function countWeek(n){ let c=0; unit().sets.forEach(s=>s.words.forEach(w=>{ if(w
 function renderVocabHome(c){
   const boxes=[
     {week:'All', ic:'📚', label:'All', count:unit().sets.reduce((a,s)=>a+s.words.length,0), all:true},
-    {week:'Semana 1', ic:'1️⃣', label:'Semana 1', count:countWeek(1)},
-    {week:'Semana 2', ic:'2️⃣', label:'Semana 2', count:countWeek(2)},
+    ...weeksInUnit().map(n=>({ week:`Semana ${n}`, ic:WEEK_ICONS[n-1]||"📅", label:`Semana ${n}`, count:countWeek(n) })),
   ];
   c.innerHTML=`<div class="hub">${boxes.map(b=>`
     <div class="hubcard bigcard ${b.all?'allcard':''}" data-week="${esc(b.week)}">
