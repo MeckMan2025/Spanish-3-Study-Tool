@@ -331,6 +331,63 @@ const DATA = {
   ]
 };
 
+/* ============================ GRAMMAR ============================ */
+// Nouns come from the vocab list, so the grammar drills use words already being
+// learned. The article carries both gender and number, which is exactly what
+// gusta/gustan and nuestro/a/os/as need.
+function articleNouns(){
+  const out=[];
+  DATA.units.forEach(u=>u.sets.forEach(s=>s.words.forEach(w=>{
+    const m=/^(el|la|los|las) (.+)$/.exec(w.es);
+    if(m) out.push({ art:m[1], noun:m[2], en:w.en, plural:m[1]==='los'||m[1]==='las', fem:m[1]==='la'||m[1]==='las' });
+  })));
+  return out;
+}
+
+// Gustar runs backwards: the thing liked is the subject, so only gusta/gustan
+// moves with it, while the person changes the pronoun in front.
+const GUSTAR_PEOPLE=[
+  {es:'yo', en:'I', pron:'me'},
+  {es:'tú', en:'you', pron:'te'},
+  {es:'él', en:'he', pron:'le'},
+  {es:'ella', en:'she', pron:'le'},
+  {es:'nosotros', en:'we', pron:'nos'},
+  {es:'vosotros', en:'you all', pron:'os'},
+  {es:'ellos', en:'they', pron:'les'},
+];
+const POSS_OWNERS=[
+  {en:'my',   one:'mi',  many:'mis'},
+  {en:'your', one:'tu',  many:'tus'},
+  {en:'his',  one:'su',  many:'sus'},
+  {en:'her',  one:'su',  many:'sus'},
+  {en:'their',one:'su',  many:'sus'},
+  {en:'our',  gendered:true},
+];
+const possessive=(o,n)=> o.gendered
+  ? (n.plural ? (n.fem?'nuestras':'nuestros') : (n.fem?'nuestra':'nuestro'))
+  : (n.plural ? o.many : o.one);
+
+const GRAMMAR=[
+  { id:'gustar', name:'Gustar', emoji:'💚', blurb:'me / te / le / nos + gusta or gustan',
+    build(){ const nouns=articleNouns();
+      return shuffle(nouns.flatMap(n=>GUSTAR_PEOPLE.map(p=>({
+        ask:`${p.en} · ${n.art} ${n.noun}`,
+        hint:n.en,
+        answer:`${p.pron} ${n.plural?'gustan':'gusta'} ${n.art} ${n.noun}`,
+        why:n.plural?'The thing liked is plural, so gustan.':'The thing liked is singular, so gusta.',
+      })))).slice(0,40); } },
+  { id:'posesivos', name:'Posesivos', emoji:'🔑', blurb:'mi · tu · su · nuestro, agreeing with the noun',
+    build(){ const nouns=articleNouns();
+      return shuffle(nouns.flatMap(n=>POSS_OWNERS.map(o=>({
+        ask:`${o.en} · ${n.art} ${n.noun}`,
+        hint:n.en,
+        answer:`${possessive(o,n)} ${n.noun}`,
+        why:o.gendered
+          ? 'Nuestro is the one that changes for gender as well as number.'
+          : (n.plural?'The noun is plural, so the possessive is too.':'The noun is singular, so the possessive is too.'),
+      })))).slice(0,40); } },
+];
+
 /* ============================ CULTURE ============================ */
 // Big topics, five facts each. Add a topic by adding an entry here — the
 // section counts them, and the matching quiz turns itself on once there are at
@@ -368,6 +425,8 @@ let state = {
   pdir:"es2en",            // 'es2en' | 'en2es' | 'mix'
   vcat:"all",              // verb category: 'all' | 'regular' | 'irregular' | 'boot'
   tsession:null,           // "which type is it?" quiz over verb types
+  gtopic:null,             // grammar: which drill is open
+  gsession:null,           // grammar: the running drill
   ctopic:null,             // culture: which topic is open
   fsession:null,           // culture: match-the-fact quiz
   cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
@@ -384,7 +443,7 @@ function load(){
   try{ const s=JSON.parse(localStorage.getItem(LS)); if(s) Object.assign(state,s);}catch(e){}
   if(state.view==="hub") state.view="vocab";
   if(state.view==="conjugations") state.view="verbs";
-  if(!["unit","vocab","verbs","section","conjugate","culture"].includes(state.view)) state.view="unit";
+  if(!["unit","vocab","verbs","section","conjugate","culture","grammar"].includes(state.view)) state.view="unit";
   state.session=null;
 }
 function save(){ localStorage.setItem(LS, JSON.stringify({unitIdx:state.unitIdx,view:state.view,section:state.section,week:state.week,mode:state.mode,direction:state.direction,expanded:state.expanded,selected:state.selected})); }
@@ -627,6 +686,28 @@ function renderTop(){
     t.innerHTML=`<div><h2>Unit ${state.unitIdx+1}${uTheme?` — ${esc(uTheme)}`:''}</h2><div class="sub">Choose what to study</div></div>`;
     return;
   }
+  if(state.view==="grammar"){
+    const inDrill = !!state.gsession;
+    const g = inDrill ? GRAMMAR.find(x=>x.id===state.gsession.drill) : null;
+    t.innerHTML=`
+      <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : 'Unit '+(state.unitIdx+1)}</button>
+      <div><h2>${inDrill ? esc(g.name) : 'Grammar'}</h2>
+      <div class="sub">${inDrill ? esc(g.blurb) : 'Gustar and possessives'}</div></div>`;
+    t.querySelector("#back").onclick=()=>{ if(inDrill){ state.gsession=null; state.gtopic=null; } else state.view="unit"; render(); };
+    return;
+  }
+  if(state.view==="culture"){
+    const inQuiz = !!state.fsession, inTopic = !!state.ctopic;
+    t.innerHTML=`
+      <button class="backbtn" id="back">← ${inQuiz||inTopic ? 'Culture' : 'Unit '+(state.unitIdx+1)}</button>
+      <div><h2>${inQuiz ? 'Match the facts' : inTopic ? 'Topic' : 'Culture'}</h2>
+      <div class="sub">${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${factCount()} facts</div></div>`;
+    t.querySelector("#back").onclick=()=>{
+      if(inQuiz) state.fsession=null; else if(inTopic) state.ctopic=null; else state.view="unit";
+      render();
+    };
+    return;
+  }
   if(state.view==="verbs"){
     // Back leaves the type quiz before it leaves the Verbs section, so it
     // isn't a one-way door out of the whole area.
@@ -663,6 +744,7 @@ function renderContent(){
   if(state.view==="unit") return renderUnitHome(c);
   if(state.view==="vocab") return renderVocabHome(c);
   if(state.view==="verbs") return state.tsession ? renderTypeQuiz(c) : renderVerbHome(c);
+  if(state.view==="grammar") return state.gsession ? renderGrammarQuiz(c) : renderGrammarHome(c);
   if(state.view==="culture") return state.fsession ? renderFactQuiz(c)
     : state.ctopic ? renderCultureTopic(c) : renderCultureHome(c);
   if(state.view==="conjugate") return renderConjugate(c);
@@ -843,6 +925,79 @@ function renderVocabHome(c){
   c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; render(); });
 }
 
+/* -------- Grammar: gustar and possessives -------- */
+function renderGrammarHome(c){
+  c.innerHTML=`<div class="hub">${GRAMMAR.map(g=>`
+    <div class="hubcard bigcard" data-drill="${esc(g.id)}">
+      <span class="go">→</span><span class="ic big">${g.emoji}</span>
+      <h3>${esc(g.name)}</h3><div class="meta">${esc(g.blurb)}</div>
+    </div>`).join('')}</div>`;
+  c.querySelectorAll("[data-drill]").forEach(el=>el.onclick=()=>{
+    const g=GRAMMAR.find(x=>x.id===el.dataset.drill);
+    state.gtopic=g.id;
+    state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
+    render();
+  });
+}
+function renderGrammarQuiz(c){
+  const s=state.gsession, g=GRAMMAR.find(x=>x.id===s.drill);
+  if(s.i>=s.queue.length){
+    const pct=s.queue.length?Math.round(s.correct/s.queue.length*100):0;
+    let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
+      <div class="lbl">${s.correct} of ${s.queue.length} right on the first try</div>`;
+    if(s.wrong.length){
+      h+=`<div class="missed"><div class="sectionhdr">Ones you had to retry</div>`;
+      s.wrong.forEach(it=>{ h+=`<div class="m"><span>${esc(it.ask)}</span><span>${esc(it.answer)}</span></div>`; });
+      h+=`</div>`;
+    }
+    h+=`<div class="fbrow">
+        ${s.wrong.length?`<button class="pill" id="retry">🔁 Retry the ${s.wrong.length} tricky ones</button>`:``}
+        <button class="pill ghost" id="restart">↻ Start over</button>
+        <button class="pill ghost" id="done">Done</button>
+      </div></div>`;
+    c.innerHTML=h;
+    if(s.wrong.length) c.querySelector("#retry").onclick=()=>{ state.gsession={drill:s.drill,queue:shuffle(s.wrong),i:0,correct:0,wrong:[],result:null,curWrong:false}; render(); };
+    c.querySelector("#restart").onclick=()=>{ state.gsession={drill:g.id,queue:g.build(),i:0,correct:0,wrong:[],result:null,curWrong:false}; render(); };
+    c.querySelector("#done").onclick=()=>{ state.gsession=null; state.gtopic=null; render(); };
+    return;
+  }
+  const it=s.queue[s.i], pct=Math.round(s.i/s.queue.length*100);
+  let h=`<div class="stage">
+    <div class="prog"><div class="progtxt">${s.i+1} / ${s.queue.length}</div>
+      <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✓ ${s.correct}</div></div>
+    <div class="prompt">${esc(it.ask)}</div>
+    <div class="askside">${esc(it.hint)}</div>`;
+  if(s.result==='right'){
+    h+=`<div class="feedback good">✓ ¡Correcto!<span class="corr"><b>${esc(it.answer)}</b></span></div>
+      <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
+  }else{
+    h+=`<div class="answer">
+        <input id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="write it out…">
+        <button class="pill" id="check">Check</button>
+      </div>
+      <div class="accents">${ACCENTS.map(ch=>`<button class="accbtn" data-ch="${ch}">${ch}</button>`).join('')}</div>`;
+    if(s.result==='wrong'){
+      h+=`<div class="feedback bad">✕ Not quite<span class="corr"><b>${esc(it.answer)}</b> — ${esc(it.why)}</span></div>`;
+    }
+  }
+  h+=`</div>`;
+  c.innerHTML=h;
+  if(s.result==='right'){
+    c.querySelector("#next").onclick=()=>{ s.i++; s.result=null; s.curWrong=false; render(); };
+    return;
+  }
+  const inp=c.querySelector("#ans");
+  const submit=()=>{
+    if(checkAns(inp.value, it.answer, true)){ if(!s.curWrong) s.correct++; s.result='right'; }
+    else { if(!s.curWrong){ s.wrong.push(it); s.curWrong=true; } s.result='wrong'; }
+    render();
+  };
+  c.querySelector("#check").onclick=submit;
+  inp.onkeydown=e=>{ if(e.key==='Enter') submit(); };
+  c.querySelectorAll(".accbtn").forEach(b=>b.onclick=()=>{ inp.value+=b.dataset.ch; inp.focus(); });
+  inp.focus();
+}
+
 /* -------- Culture: topics, their facts, and matching -------- */
 const factCount = () => CULTURE.reduce((a,t)=>a+t.facts.length,0);
 
@@ -943,6 +1098,7 @@ function renderUnitHome(c){
   const cards=[
     {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
+    {key:'grammar', ic:'🧩', title:'Grammar', desc:GRAMMAR.map(g=>g.name).join(' · '), cls:''},
     {key:'culture', ic:'🌎', title:'Culture', desc: CULTURE.length
       ? `${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${CULTURE.reduce((a,t)=>a+t.facts.length,0)} facts`
       : 'Nothing added yet', cls:''},
