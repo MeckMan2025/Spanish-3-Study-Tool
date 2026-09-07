@@ -1129,12 +1129,13 @@ function renderVerbHome(c){
     <div class="hubcard bigcard ${b.all?'allcard':''}" data-vcat="${b.cat}">
       <span class="go">→</span><span class="ic big">${b.ic}</span>
       <h3>${VCAT_LABEL[b.cat]}</h3><div class="meta">${n} verb${n===1?'':'s'}</div>
-    </div>`;}).join('')}</div>`;
-  c.insertAdjacentHTML('beforeend',
-    `<button class="practicebtn" id="startType">🔎 Which type is it?</button>
-     <p class="psub" style="text-align:center;margin-top:-6px">Say whether each verb is regular, a boot verb, or irregular.</p>`);
+    </div>`;}).join('')}
+    <div class="hubcard bigcard" data-type-quiz>
+      <span class="go">→</span><span class="ic big">🔎</span>
+      <h3>Which type is it?</h3><div class="meta">${VERBS_CONJ.length} verbs · regular, boot or irregular</div>
+    </div></div>`;
   c.querySelectorAll("[data-vcat]").forEach(el=>el.onclick=()=>{ state.vcat=el.dataset.vcat; state.view='conjugate'; state.cstep=null; state.csession=null; render(); });
-  c.querySelector("#startType").onclick=()=>{ startTypeQuiz(); render(); };
+  c.querySelector("[data-type-quiz]").onclick=()=>{ startTypeQuiz(); render(); };
 }
 
 /* -------- "Which type is it?" — regular / boot / irregular -------- */
