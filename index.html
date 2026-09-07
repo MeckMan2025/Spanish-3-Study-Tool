@@ -352,6 +352,7 @@ let state = {
   pstep:null,              // practice flow: null (word list) | 'exclude' | 'direction' | 'quiz'
   pdir:"es2en",            // 'es2en' | 'en2es' | 'mix'
   vcat:"all",              // verb category: 'all' | 'regular' | 'irregular' | 'boot'
+  tsession:null,           // "which type is it?" quiz over verb types
   cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
   cdisp:"es",              // prompt language: 'es' | 'en' | 'mix'
   ccover:"all",            // pronouns per verb: 'all' (all six) | 'mixed' (one each)
@@ -610,10 +611,14 @@ function renderTop(){
     return;
   }
   if(state.view==="verbs"){
+    // Back leaves the type quiz before it leaves the Verbs section, so it
+    // isn't a one-way door out of the whole area.
+    const inType = !!state.tsession;
     t.innerHTML=`
-      <button class="backbtn" id="back">← Unit ${state.unitIdx+1}</button>
-      <div><h2>Verbs</h2><div class="sub">Conjugation practice</div></div>`;
-    t.querySelector("#back").onclick=()=>{state.view="unit"; render();};
+      <button class="backbtn" id="back">← ${inType ? 'Verbs' : 'Unit '+(state.unitIdx+1)}</button>
+      <div><h2>${inType ? 'Which type is it?' : 'Verbs'}</h2>
+      <div class="sub">${inType ? 'Regular · boot · irregular' : 'Conjugation practice'}</div></div>`;
+    t.querySelector("#back").onclick=()=>{ if(inType) state.tsession=null; else state.view="unit"; render(); };
     return;
   }
   if(state.view==="vocab"){
@@ -640,7 +645,7 @@ function renderContent(){
   const c=document.getElementById("content");
   if(state.view==="unit") return renderUnitHome(c);
   if(state.view==="vocab") return renderVocabHome(c);
-  if(state.view==="verbs") return renderVerbHome(c);
+  if(state.view==="verbs") return state.tsession ? renderTypeQuiz(c) : renderVerbHome(c);
   if(state.view==="conjugate") return renderConjugate(c);
   // Vocab study view (a week): word list → Practice → exclude → direction → quiz
   if(state.pstep==="exclude") return renderExclude(c);
@@ -846,7 +851,73 @@ function renderVerbHome(c){
       <span class="go">→</span><span class="ic big">${b.ic}</span>
       <h3>${VCAT_LABEL[b.cat]}</h3><div class="meta">${n} verb${n===1?'':'s'}</div>
     </div>`;}).join('')}</div>`;
+  c.insertAdjacentHTML('beforeend',
+    `<button class="practicebtn" id="startType">🔎 Which type is it?</button>
+     <p class="psub" style="text-align:center;margin-top:-6px">Say whether each verb is regular, a boot verb, or irregular.</p>`);
   c.querySelectorAll("[data-vcat]").forEach(el=>el.onclick=()=>{ state.vcat=el.dataset.vcat; state.view='conjugate'; state.cstep=null; state.csession=null; render(); });
+  c.querySelector("#startType").onclick=()=>{ startTypeQuiz(); render(); };
+}
+
+/* -------- "Which type is it?" — regular / boot / irregular -------- */
+const TYPE_LABEL={regular:'Regular', boot:'Boot verb', irregular:'Irregular'};
+// Why each answer is what it is, so a wrong guess teaches something.
+const TYPE_WHY={
+  regular:'Keeps its stem and takes the plain -ar/-er/-ir endings all the way through.',
+  boot:'The stem changes in every form except nosotros and vosotros — the shape that change makes on the chart is the boot.',
+  irregular:'Does its own thing; the forms have to be learned rather than worked out.',
+};
+function startTypeQuiz(){
+  state.tsession={ queue:shuffle(VERBS_CONJ), i:0, correct:0, wrong:[], result:null, curWrong:false };
+}
+function renderTypeQuiz(c){
+  const s=state.tsession;
+  if(s.i>=s.queue.length){
+    const pct=s.queue.length?Math.round(s.correct/s.queue.length*100):0;
+    let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
+      <div class="lbl">${s.correct} of ${s.queue.length} right on the first try</div>`;
+    if(s.wrong.length){
+      h+=`<div class="missed"><div class="sectionhdr">Verbs you had to retry</div>`;
+      s.wrong.forEach(v=>{ h+=`<div class="m"><span>${esc(v.inf)}</span><span>${TYPE_LABEL[v.type]}</span></div>`; });
+      h+=`</div>`;
+    }
+    h+=`<div class="fbrow">
+        ${s.wrong.length?`<button class="pill" id="retry">🔁 Retry the ${s.wrong.length} tricky ones</button>`:``}
+        <button class="pill ghost" id="restart">↻ Start over</button>
+        <button class="pill ghost" id="done">Done</button>
+      </div></div>`;
+    c.innerHTML=h;
+    if(s.wrong.length) c.querySelector("#retry").onclick=()=>{ state.tsession={queue:shuffle(s.wrong),i:0,correct:0,wrong:[],result:null,curWrong:false}; render(); };
+    c.querySelector("#restart").onclick=()=>{ startTypeQuiz(); render(); };
+    c.querySelector("#done").onclick=()=>{ state.tsession=null; render(); };
+    return;
+  }
+  const v=s.queue[s.i], pct=Math.round(s.i/s.queue.length*100);
+  let h=`<div class="stage">
+    <div class="prog"><div class="progtxt">${s.i+1} / ${s.queue.length}</div>
+      <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✓ ${s.correct}</div></div>
+    <div class="prompt">${esc(v.inf)}</div>
+    <div class="askside">${esc(v.en)}</div>`;
+  if(s.result){
+    const right=s.result==='right';
+    h+=`<div class="feedback ${right?'good':'bad'}">${right?'✓ ¡Correcto!':'✕ Not quite'}
+        <span class="corr"><b>${esc(v.inf)}</b> is ${TYPE_LABEL[v.type].toLowerCase()} — ${TYPE_WHY[v.type]}</span></div>
+      <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
+  }else{
+    h+=`<div class="dirlist">${['regular','boot','irregular'].map(t=>
+      `<button class="dircard" data-type="${t}"><span class="di">${t==='regular'?'✅':t==='boot'?'🥾':'⚡'}</span>
+        <div class="dtx"><div class="dt">${TYPE_LABEL[t]}</div></div><span class="go">→</span></button>`).join('')}</div>`;
+  }
+  h+=`</div>`;
+  c.innerHTML=h;
+  if(s.result){
+    c.querySelector("#next").onclick=()=>{ s.i++; s.result=null; s.curWrong=false; render(); };
+  }else{
+    c.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{
+      if(b.dataset.type===v.type){ if(!s.curWrong) s.correct++; s.result='right'; }
+      else { if(!s.curWrong){ s.wrong.push(v); s.curWrong=true; } s.result='wrong'; }
+      render();
+    });
+  }
 }
 
 /* -------- Conjugation practice flow -------- */
