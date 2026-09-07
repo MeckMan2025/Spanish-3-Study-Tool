@@ -331,6 +331,21 @@ const DATA = {
   ]
 };
 
+/* ============================ CULTURE ============================ */
+// Big topics, five facts each. Add a topic by adding an entry here — the
+// section counts them, and the matching quiz turns itself on once there are at
+// least two, because with one topic there is nothing to confuse it with.
+const CULTURE = [
+  { id:'porque', name:'¿Por qué el español?', emoji:'🗣️', facts:[
+    'Spanish is the 2nd most spoken language in the world by native speakers — around 500 million people worldwide.',
+    'The Americas are home to around 460 million Spanish speakers.',
+    'Hispanic people make up the largest minority population in the U.S., about 20%.',
+    'Spanish is the most-selected foreign language studied in the U.S.',
+    'Spanish is a Romance language with Latin origins and Arabic influence, and the Royal Spanish Academy is "in charge" of the language.',
+  ]},
+  // Next up on the sheet: Los Países Hispanohablantes.
+];
+
 /* ============================ STATE ============================ */
 // Weekly groupings from the packet. A set can declare its week outright with
 // `week:3`; the two original sets are matched by name so nothing had to change
@@ -353,6 +368,8 @@ let state = {
   pdir:"es2en",            // 'es2en' | 'en2es' | 'mix'
   vcat:"all",              // verb category: 'all' | 'regular' | 'irregular' | 'boot'
   tsession:null,           // "which type is it?" quiz over verb types
+  ctopic:null,             // culture: which topic is open
+  fsession:null,           // culture: match-the-fact quiz
   cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
   cdisp:"es",              // prompt language: 'es' | 'en' | 'mix'
   ccover:"all",            // pronouns per verb: 'all' (all six) | 'mixed' (one each)
@@ -367,7 +384,7 @@ function load(){
   try{ const s=JSON.parse(localStorage.getItem(LS)); if(s) Object.assign(state,s);}catch(e){}
   if(state.view==="hub") state.view="vocab";
   if(state.view==="conjugations") state.view="verbs";
-  if(!["unit","vocab","verbs","section","conjugate"].includes(state.view)) state.view="unit";
+  if(!["unit","vocab","verbs","section","conjugate","culture"].includes(state.view)) state.view="unit";
   state.session=null;
 }
 function save(){ localStorage.setItem(LS, JSON.stringify({unitIdx:state.unitIdx,view:state.view,section:state.section,week:state.week,mode:state.mode,direction:state.direction,expanded:state.expanded,selected:state.selected})); }
@@ -646,6 +663,8 @@ function renderContent(){
   if(state.view==="unit") return renderUnitHome(c);
   if(state.view==="vocab") return renderVocabHome(c);
   if(state.view==="verbs") return state.tsession ? renderTypeQuiz(c) : renderVerbHome(c);
+  if(state.view==="culture") return state.fsession ? renderFactQuiz(c)
+    : state.ctopic ? renderCultureTopic(c) : renderCultureHome(c);
   if(state.view==="conjugate") return renderConjugate(c);
   // Vocab study view (a week): word list → Practice → exclude → direction → quiz
   if(state.pstep==="exclude") return renderExclude(c);
@@ -824,12 +843,109 @@ function renderVocabHome(c){
   c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; render(); });
 }
 
+/* -------- Culture: topics, their facts, and matching -------- */
+const factCount = () => CULTURE.reduce((a,t)=>a+t.facts.length,0);
+
+function renderCultureHome(c){
+  if(CULTURE.length===0){
+    c.innerHTML=`<div class="empty"><div class="em">🌎</div>No culture topics yet.<br>Tell me the topic and its facts and I'll add them.</div>`;
+    return;
+  }
+  const canMatch = CULTURE.length >= 2;
+  let h=`<div class="hub">${CULTURE.map(t=>`
+    <div class="hubcard bigcard" data-topic="${esc(t.id)}">
+      <span class="go">→</span><span class="ic big">${t.emoji||'🌎'}</span>
+      <h3>${esc(t.name)}</h3><div class="meta">${t.facts.length} fact${t.facts.length===1?'':'s'}</div>
+    </div>`).join('')}</div>
+    <button class="practicebtn" id="startMatch" ${canMatch?'':'disabled'}>🔀 Match the facts</button>
+    <p class="psub" style="text-align:center;margin-top:-6px">${canMatch
+      ? 'A fact comes up — say which topic it belongs to.'
+      : 'Needs a second topic before facts can be told apart.'}</p>`;
+  c.innerHTML=h;
+  c.querySelectorAll("[data-topic]").forEach(el=>el.onclick=()=>{ state.ctopic=el.dataset.topic; render(); });
+  if(canMatch) c.querySelector("#startMatch").onclick=()=>{ startFactQuiz(); render(); };
+}
+
+function renderCultureTopic(c){
+  const t=CULTURE.find(x=>x.id===state.ctopic);
+  if(!t){ state.ctopic=null; return render(); }
+  c.innerHTML=`<h2 class="ptitle">${t.emoji||'🌎'} ${esc(t.name)}</h2>
+    <p class="psub">Tap a fact to hide it, and see how many you can still say from memory.</p>
+    <div class="space">${t.facts.map((f,i)=>
+      `<div class="wcard on" data-fact="${i}"><span class="box">${i+1}</span>
+        <div class="txt"><div class="es">${esc(f)}</div></div></div>`).join('')}</div>`;
+  c.querySelectorAll("[data-fact]").forEach(el=>el.onclick=()=>{
+    const on=el.classList.toggle('off'); el.classList.toggle('on', !on);
+    const txt=el.querySelector('.es');
+    txt.style.visibility = on ? 'hidden' : '';
+  });
+}
+
+function startFactQuiz(){
+  const all=CULTURE.flatMap(t=>t.facts.map(f=>({ fact:f, topic:t.id })));
+  state.fsession={ queue:shuffle(all), i:0, correct:0, wrong:[], result:null, curWrong:false };
+}
+function renderFactQuiz(c){
+  const s=state.fsession;
+  const nameOf=id=>{ const t=CULTURE.find(x=>x.id===id); return t?t.name:id; };
+  if(s.i>=s.queue.length){
+    const pct=s.queue.length?Math.round(s.correct/s.queue.length*100):0;
+    let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
+      <div class="lbl">${s.correct} of ${s.queue.length} right on the first try</div>`;
+    if(s.wrong.length){
+      h+=`<div class="missed"><div class="sectionhdr">Facts you had to retry</div>`;
+      s.wrong.forEach(it=>{ h+=`<div class="m"><span>${esc(it.fact)}</span><span>${esc(nameOf(it.topic))}</span></div>`; });
+      h+=`</div>`;
+    }
+    h+=`<div class="fbrow">
+        ${s.wrong.length?`<button class="pill" id="retry">🔁 Retry the ${s.wrong.length} tricky ones</button>`:``}
+        <button class="pill ghost" id="restart">↻ Start over</button>
+        <button class="pill ghost" id="done">Done</button>
+      </div></div>`;
+    c.innerHTML=h;
+    if(s.wrong.length) c.querySelector("#retry").onclick=()=>{ state.fsession={queue:shuffle(s.wrong),i:0,correct:0,wrong:[],result:null,curWrong:false}; render(); };
+    c.querySelector("#restart").onclick=()=>{ startFactQuiz(); render(); };
+    c.querySelector("#done").onclick=()=>{ state.fsession=null; render(); };
+    return;
+  }
+  const it=s.queue[s.i], pct=Math.round(s.i/s.queue.length*100);
+  let h=`<div class="stage">
+    <div class="prog"><div class="progtxt">${s.i+1} / ${s.queue.length}</div>
+      <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✓ ${s.correct}</div></div>
+    <div class="prompt" style="font-size:19px;line-height:1.35">${esc(it.fact)}</div>
+    <div class="askside">Which topic is this?</div>`;
+  if(s.result){
+    const right=s.result==='right';
+    h+=`<div class="feedback ${right?'good':'bad'}">${right?'✓ ¡Correcto!':'✕ Not quite'}
+        <span class="corr">That one belongs to <b>${esc(nameOf(it.topic))}</b></span></div>
+      <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
+  }else{
+    h+=`<div class="dirlist">${CULTURE.map(t=>
+      `<button class="dircard" data-pick="${esc(t.id)}"><span class="di">${t.emoji||'🌎'}</span>
+        <div class="dtx"><div class="dt">${esc(t.name)}</div></div><span class="go">→</span></button>`).join('')}</div>`;
+  }
+  h+=`</div>`;
+  c.innerHTML=h;
+  if(s.result){
+    c.querySelector("#next").onclick=()=>{ s.i++; s.result=null; s.curWrong=false; render(); };
+  }else{
+    c.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{
+      if(b.dataset.pick===it.topic){ if(!s.curWrong) s.correct++; s.result='right'; }
+      else { if(!s.curWrong){ s.wrong.push(it); s.curWrong=true; } s.result='wrong'; }
+      render();
+    });
+  }
+}
+
 /* -------- Unit home: the two squares -------- */
 function renderUnitHome(c){
   const words=unit().sets.reduce((a,s)=>a+s.words.length,0);
   const cards=[
     {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
+    {key:'culture', ic:'🌎', title:'Culture', desc: CULTURE.length
+      ? `${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${CULTURE.reduce((a,t)=>a+t.facts.length,0)} facts`
+      : 'Nothing added yet', cls:''},
   ];
   c.innerHTML=`<div class="hub unit-home">${cards.map(card=>`
     <div class="hubcard bigcard ${card.cls}" data-go="${card.key}">
