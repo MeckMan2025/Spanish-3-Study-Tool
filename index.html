@@ -374,34 +374,30 @@ const possessive=(o,n)=> o.gendered
   ? (n.plural ? (n.fem?'nuestras':'nuestros') : (n.fem?'nuestra':'nuestro'))
   : (n.plural ? o.many : o.one);
 
-// Saber and conocer both land on "to know" in English, so the drill is the
-// choice first and the conjugation second: facts and skills take saber, people
-// and places take conocer. The blank in the prompt is what keeps the expected
-// answer down to the verb alone.
-const SC_PEOPLE=[
-  {es:'yo', en:'I', form:'yo'},
-  {es:'tú', en:'you', form:'tu'},
-  {es:'mi hermana', en:'my sister', form:'el'},
-  {es:'nosotros', en:'we', form:'nos'},
-  {es:'ellos', en:'they', form:'ellos'},
-];
+// Saber and conocer both land on "to know" in English, and the exam asks
+// which of the two a sentence needs — not the form. So the drill is the choice
+// on its own: facts and skills take saber, people and places take conocer.
 const SC_CONTEXTS=[
-  {v:'saber', en:'the answer',               why:'Saber — a fact you can state.'},
-  {v:'saber', en:'her phone number',         why:'Saber — information you can repeat back.'},
-  {v:'saber', en:'the truth',                why:'Saber — a fact, not a person or a place.'},
-  {v:'saber', en:'what happened last night', why:'Saber — information about an event.'},
-  {v:'saber', en:'where the cage is',        why:'Saber — a piece of information, even when it is about a place.'},
-  {v:'saber', en:'how to drive',             why:'Saber + an infinitive is knowing how to do something.'},
-  {v:'saber', en:'how to fly a plane',       why:'Saber + an infinitive — a skill.'},
-  {v:'saber', en:'how to ride a horse',      why:'Saber + an infinitive — a skill.'},
-  {v:'conocer', en:'the new student',        why:'Conocer — being acquainted with a person.'},
-  {v:'conocer', en:'the owner of the farm',  why:'Conocer — a person you have met.'},
-  {v:'conocer', en:'that judge',             why:'Conocer — a person, even one you barely know.'},
-  {v:'conocer', en:'Ana\'s family',          why:'Conocer — people.'},
-  {v:'conocer', en:'the main character',     why:'Conocer — familiarity with a person.'},
-  {v:'conocer', en:'Costa Rica',             why:'Conocer — a place you have been.'},
-  {v:'conocer', en:'the city well',          why:'Conocer — familiarity with a place.'},
-  {v:'conocer', en:'the jungle',             why:'Conocer — a place you know your way around.'},
+  {v:'saber', ask:'I ____ the answer',                    why:'Saber — a fact you can state.'},
+  {v:'saber', ask:'She ____ her phone number',            why:'Saber — information you can repeat back.'},
+  {v:'saber', ask:'We ____ the truth',                    why:'Saber — a fact, not a person or a place.'},
+  {v:'saber', ask:'They ____ what happened last night',   why:'Saber — information about an event.'},
+  {v:'saber', ask:'My sister ____ where the cage is',     why:'Saber — a piece of information, even when it is about a place.'},
+  {v:'saber', ask:'You ____ how to drive',                why:'Saber + an infinitive is knowing how to do something.'},
+  {v:'saber', ask:'He ____ how to fly a plane',           why:'Saber + an infinitive — a skill.'},
+  {v:'saber', ask:'We ____ how to ride a horse',          why:'Saber + an infinitive — a skill.'},
+  {v:'saber', ask:'They ____ the answers to the test',    why:'Saber — facts you have learned.'},
+  {v:'saber', ask:'I ____ what time the meeting starts',  why:'Saber — information you could say out loud.'},
+  {v:'conocer', ask:'I ____ the new student',             why:'Conocer — being acquainted with a person.'},
+  {v:'conocer', ask:'She ____ the owner of the farm',     why:'Conocer — a person you have met.'},
+  {v:'conocer', ask:'We ____ that judge',                 why:'Conocer — a person, even one you barely know.'},
+  {v:'conocer', ask:'They ____ my family',                why:'Conocer — people.'},
+  {v:'conocer', ask:'You ____ the main character',        why:'Conocer — familiarity with a person.'},
+  {v:'conocer', ask:'He ____ Costa Rica',                 why:'Conocer — a place you have been.'},
+  {v:'conocer', ask:'We ____ the city well',              why:'Conocer — familiarity with a place.'},
+  {v:'conocer', ask:'I ____ the jungle',                  why:'Conocer — a place you know your way around.'},
+  {v:'conocer', ask:'My brother ____ my teacher',         why:'Conocer — a person.'},
+  {v:'conocer', ask:'They ____ the beaches near the hacienda', why:'Conocer — places you are familiar with.'},
 ];
 
 const GRAMMAR=[
@@ -424,17 +420,12 @@ const GRAMMAR=[
           : (n.plural?'The noun is plural, so the possessive is too.':'The noun is singular, so the possessive is too.'),
       })))).slice(0,40); } },
   { id:'saber-conocer', name:'Saber / Conocer', emoji:'🧠', blurb:'facts and skills vs. people and places',
-    // VERBS_CONJ is defined further down, but build() only runs on a click, so
-    // the two verbs stay spelled out in exactly one place.
-    build(){ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-      const form=Object.fromEntries(['saber','conocer'].map(inf=>
-        [inf, conjugate(VERBS_CONJ.find(v=>v.inf===inf))]));
-      return shuffle(SC_CONTEXTS.flatMap(c=>SC_PEOPLE.map(p=>({
-        ask:`${cap(p.en)} ____ ${c.en}`,
-        hint:p.es,
-        answer:form[c.v][p.form],
-        why:c.why,
-      })))).slice(0,40); } },
+    build(){ return shuffle(SC_CONTEXTS.map(c=>({
+      ask:c.ask,
+      hint:'saber or conocer?',
+      answer:c.v,
+      why:c.why,
+    }))); } },
 ];
 
 /* ============================ CULTURE ============================ */
