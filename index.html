@@ -374,30 +374,32 @@ const possessive=(o,n)=> o.gendered
   ? (n.plural ? (n.fem?'nuestras':'nuestros') : (n.fem?'nuestra':'nuestro'))
   : (n.plural ? o.many : o.one);
 
-// Saber and conocer both land on "to know" in English, and the exam asks
-// which of the two a sentence needs — not the form. So the drill is the choice
-// on its own: facts and skills take saber, people and places take conocer.
+// Saber and conocer both land on "to know" in English, and the exam asks which
+// of the two a sentence needs: facts and skills take saber, people and places
+// take conocer. The two buttons are conjugated to the sentence's subject, so
+// the right form is in front of you while you make the choice — `form` is which
+// one, in the same keys conjugate() returns.
 const SC_CONTEXTS=[
-  {v:'saber', ask:'I ____ the answer',                    why:'Saber — a fact you can state.'},
-  {v:'saber', ask:'She ____ her phone number',            why:'Saber — information you can repeat back.'},
-  {v:'saber', ask:'We ____ the truth',                    why:'Saber — a fact, not a person or a place.'},
-  {v:'saber', ask:'They ____ what happened last night',   why:'Saber — information about an event.'},
-  {v:'saber', ask:'My sister ____ where the cage is',     why:'Saber — a piece of information, even when it is about a place.'},
-  {v:'saber', ask:'You ____ how to drive',                why:'Saber + an infinitive is knowing how to do something.'},
-  {v:'saber', ask:'He ____ how to fly a plane',           why:'Saber + an infinitive — a skill.'},
-  {v:'saber', ask:'We ____ how to ride a horse',          why:'Saber + an infinitive — a skill.'},
-  {v:'saber', ask:'They ____ the answers to the test',    why:'Saber — facts you have learned.'},
-  {v:'saber', ask:'I ____ what time the meeting starts',  why:'Saber — information you could say out loud.'},
-  {v:'conocer', ask:'I ____ the new student',             why:'Conocer — being acquainted with a person.'},
-  {v:'conocer', ask:'She ____ the owner of the farm',     why:'Conocer — a person you have met.'},
-  {v:'conocer', ask:'We ____ that judge',                 why:'Conocer — a person, even one you barely know.'},
-  {v:'conocer', ask:'They ____ my family',                why:'Conocer — people.'},
-  {v:'conocer', ask:'You ____ the main character',        why:'Conocer — familiarity with a person.'},
-  {v:'conocer', ask:'He ____ Costa Rica',                 why:'Conocer — a place you have been.'},
-  {v:'conocer', ask:'We ____ the city well',              why:'Conocer — familiarity with a place.'},
-  {v:'conocer', ask:'I ____ the jungle',                  why:'Conocer — a place you know your way around.'},
-  {v:'conocer', ask:'My brother ____ my teacher',         why:'Conocer — a person.'},
-  {v:'conocer', ask:'They ____ the beaches near the hacienda', why:'Conocer — places you are familiar with.'},
+  {v:'saber', ask:'I ____ the answer', form:'yo',                    why:'Saber — a fact you can state.'},
+  {v:'saber', ask:'She ____ her phone number', form:'el',            why:'Saber — information you can repeat back.'},
+  {v:'saber', ask:'We ____ the truth', form:'nos',                    why:'Saber — a fact, not a person or a place.'},
+  {v:'saber', ask:'They ____ what happened last night', form:'ellos',   why:'Saber — information about an event.'},
+  {v:'saber', ask:'My sister ____ where the cage is', form:'el',     why:'Saber — a piece of information, even when it is about a place.'},
+  {v:'saber', ask:'You ____ how to drive', form:'tu',                why:'Saber + an infinitive is knowing how to do something.'},
+  {v:'saber', ask:'He ____ how to fly a plane', form:'el',           why:'Saber + an infinitive — a skill.'},
+  {v:'saber', ask:'We ____ how to ride a horse', form:'nos',          why:'Saber + an infinitive — a skill.'},
+  {v:'saber', ask:'They ____ the answers to the test', form:'ellos',    why:'Saber — facts you have learned.'},
+  {v:'saber', ask:'I ____ what time the meeting starts', form:'yo',  why:'Saber — information you could say out loud.'},
+  {v:'conocer', ask:'I ____ the new student', form:'yo',             why:'Conocer — being acquainted with a person.'},
+  {v:'conocer', ask:'She ____ the owner of the farm', form:'el',     why:'Conocer — a person you have met.'},
+  {v:'conocer', ask:'We ____ that judge', form:'nos',                 why:'Conocer — a person, even one you barely know.'},
+  {v:'conocer', ask:'They ____ my family', form:'ellos',                why:'Conocer — people.'},
+  {v:'conocer', ask:'You ____ the main character', form:'tu',        why:'Conocer — familiarity with a person.'},
+  {v:'conocer', ask:'He ____ Costa Rica', form:'el',                 why:'Conocer — a place you have been.'},
+  {v:'conocer', ask:'We ____ the city well', form:'nos',              why:'Conocer — familiarity with a place.'},
+  {v:'conocer', ask:'I ____ the jungle', form:'yo',                  why:'Conocer — a place you know your way around.'},
+  {v:'conocer', ask:'My brother ____ my teacher', form:'el',         why:'Conocer — a person.'},
+  {v:'conocer', ask:'They ____ the beaches near the hacienda', form:'ellos', why:'Conocer — places you are familiar with.'},
 ];
 
 const GRAMMAR=[
@@ -420,15 +422,18 @@ const GRAMMAR=[
           : (n.plural?'The noun is plural, so the possessive is too.':'The noun is singular, so the possessive is too.'),
       })))).slice(0,40); } },
   { id:'saber-conocer', name:'Saber / Conocer', emoji:'🧠', blurb:'facts and skills vs. people and places',
-    build(){ return shuffle(SC_CONTEXTS.map(c=>({
-      ask:c.ask,
-      hint:'which one does this need?',
-      answer:c.v,
-      // Two buttons rather than a text box: the exam gives you the pair and
-      // asks which, so typing it out was testing spelling as well.
-      choices:[['saber','💡'],['conocer','🤝']],
-      why:c.why,
-    }))); } },
+    build(){
+      const form=Object.fromEntries(['saber','conocer'].map(inf=>
+        [inf, conjugate(VERBS_CONJ.find(v=>v.inf===inf))]));
+      return shuffle(SC_CONTEXTS.map(c=>({
+        ask:c.ask,
+        hint:'which one does this need?',
+        answer:form[c.v][c.form],
+        // Two buttons rather than a text box: the exam gives you the pair and
+        // asks which. Both are in the form the sentence needs.
+        choices:[['saber','💡'],['conocer','🤝']].map(([inf,ic])=>[form[inf][c.form],ic]),
+        why:c.why,
+      }))); } },
 ];
 
 /* ============================ CULTURE ============================ */
