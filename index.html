@@ -713,7 +713,7 @@ function renderSidebar(){
           <button class="ut-caret" data-toggle="${i}" title="Show Vocab & Verbs">${active&&state.expanded?'▾':'▸'}</button>
         </div>`;
     if(active && state.expanded){
-      [['vocab','📚 Vocab'],['verbs','🔀 Verbs']].forEach(([key,label])=>{
+      [['vocab','📚 Vocab'],['verbs','🔀 Verbs'],['grammar','🧩 Grammar'],['culture','🌎 Culture']].forEach(([key,label])=>{
         const on = state.view===key || (key==='vocab' && state.view==='section');
         h+=`<button class="navbtn sub ${on?'active':''}" data-view="${key}"><span class="dot"></span>${label}</button>`;
       });
