@@ -422,8 +422,11 @@ const GRAMMAR=[
   { id:'saber-conocer', name:'Saber / Conocer', emoji:'🧠', blurb:'facts and skills vs. people and places',
     build(){ return shuffle(SC_CONTEXTS.map(c=>({
       ask:c.ask,
-      hint:'saber or conocer?',
+      hint:'which one does this need?',
       answer:c.v,
+      // Two buttons rather than a text box: the exam gives you the pair and
+      // asks which, so typing it out was testing spelling as well.
+      choices:[['saber','💡'],['conocer','🤝']],
       why:c.why,
     }))); } },
 ];
@@ -1020,6 +1023,13 @@ function renderGrammarQuiz(c){
   if(s.result==='right'){
     h+=`<div class="feedback good">✓ ¡Correcto!<span class="corr"><b>${esc(it.answer)}</b></span></div>
       <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
+  }else if(it.choices){
+    h+=`<div class="dirlist">${it.choices.map(([val,ic])=>
+      `<button class="dircard" data-choice="${esc(val)}"><span class="di">${ic}</span>
+        <div class="dtx"><div class="dt">${esc(val)}</div></div><span class="go">→</span></button>`).join('')}</div>`;
+    if(s.result==='wrong'){
+      h+=`<div class="feedback bad">✕ Not quite<span class="corr"><b>${esc(it.answer)}</b> — ${esc(it.why)}</span></div>`;
+    }
   }else{
     h+=`<div class="answer">
         <input id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="write it out…">
@@ -1034,6 +1044,15 @@ function renderGrammarQuiz(c){
   c.innerHTML=h;
   if(s.result==='right'){
     c.querySelector("#next").onclick=()=>{ s.i++; s.result=null; s.curWrong=false; render(); };
+    return;
+  }
+  const mark=(val)=>{
+    if(checkAns(val, it.answer, true)){ if(!s.curWrong) s.correct++; s.result='right'; }
+    else { if(!s.curWrong){ s.wrong.push(it); s.curWrong=true; } s.result='wrong'; }
+    render();
+  };
+  if(it.choices){
+    c.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>mark(b.dataset.choice));
     return;
   }
   const inp=c.querySelector("#ans");
