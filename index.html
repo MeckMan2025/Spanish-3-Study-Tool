@@ -572,6 +572,69 @@ const SC_CONTEXTS=[
   {v:'conocer', ask:'They ____ the beaches near the hacienda', form:'ellos', why:'Conocer — places you are familiar with.'},
 ];
 
+// Tú commands, Unit 2's grammar. Affirmative tú is the él/ella form (with the
+// irregulars that aren't); negative tú is built off the yo form. Both are
+// written out rather than generated from rules — this is exactly what the quiz
+// is on, so a bug in a rule would quietly teach the wrong form.
+const TU_COMMANDS=[
+  {ask:'Tell a friend to cook', hint:'cocinar', answer:'cocina', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to cook', hint:'cocinar', answer:'no cocines', why:'Negative tú starts from the yo form (cocino): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to eat', hint:'comer', answer:'come', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to eat', hint:'comer', answer:'no comas', why:'Negative tú starts from the yo form (como): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to cut it', hint:'cortar', answer:'corta', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to cut it', hint:'cortar', answer:'no cortes', why:'Negative tú starts from the yo form (corto): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to add it', hint:'añadir', answer:'añade', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to add it', hint:'añadir', answer:'no añadas', why:'Negative tú starts from the yo form (añado): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to prepare it', hint:'preparar', answer:'prepara', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to prepare it', hint:'preparar', answer:'no prepares', why:'Negative tú starts from the yo form (preparo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to mix it', hint:'mezclar', answer:'mezcla', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to mix it', hint:'mezclar', answer:'no mezcles', why:'Negative tú starts from the yo form (mezclo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to avoid it', hint:'evitar', answer:'evita', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to avoid it', hint:'evitar', answer:'no evites', why:'Negative tú starts from the yo form (evito): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to take it', hint:'tomar', answer:'toma', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to take it', hint:'tomar', answer:'no tomes', why:'Negative tú starts from the yo form (tomo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to sneeze', hint:'estornudar', answer:'estornuda', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to sneeze', hint:'estornudar', answer:'no estornudes', why:'Negative tú starts from the yo form (estornudo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to have dinner', hint:'cenar', answer:'cena', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to have dinner', hint:'cenar', answer:'no cenes', why:'Negative tú starts from the yo form (ceno): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to have breakfast', hint:'desayunar', answer:'desayuna', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to have breakfast', hint:'desayunar', answer:'no desayunes', why:'Negative tú starts from the yo form (desayuno): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to jump', hint:'saltar', answer:'salta', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to jump', hint:'saltar', answer:'no saltes', why:'Negative tú starts from the yo form (salto): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to include it', hint:'incluir', answer:'incluye', why:'Affirmative tú is just the él/ella form of the verb.'},
+  {ask:'Tell a friend NOT to include it', hint:'incluir', answer:'no incluyas', why:'Negative tú starts from the yo form (incluyo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to try it', hint:'probar', answer:'prueba', why:'Affirmative tú is the él/ella form, so the stem change comes with it.'},
+  {ask:'Tell a friend NOT to try it', hint:'probar', answer:'no pruebes', why:'Negative tú starts from the yo form (pruebo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to serve it', hint:'servir', answer:'sirve', why:'Affirmative tú is the él/ella form, so the stem change comes with it.'},
+  {ask:'Tell a friend NOT to serve it', hint:'servir', answer:'no sirvas', why:'Negative tú starts from the yo form (sirvo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to order it', hint:'pedir', answer:'pide', why:'Affirmative tú is the él/ella form, so the stem change comes with it.'},
+  {ask:'Tell a friend NOT to order it', hint:'pedir', answer:'no pidas', why:'Negative tú starts from the yo form (pido): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to boil it', hint:'hervir', answer:'hierve', why:'Affirmative tú is the él/ella form, so the stem change comes with it.'},
+  {ask:'Tell a friend NOT to boil it', hint:'hervir', answer:'no hiervas', why:'Negative tú starts from the yo form (hiervo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to have a snack', hint:'merendar', answer:'merienda', why:'Affirmative tú is the él/ella form, so the stem change comes with it.'},
+  {ask:'Tell a friend NOT to have a snack', hint:'merendar', answer:'no meriendes', why:'Negative tú starts from the yo form (meriendo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to have lunch', hint:'almorzar', answer:'almuerza', why:'Affirmative tú is the él/ella form, stem change and all.'},
+  {ask:'Tell a friend NOT to have lunch', hint:'almorzar', answer:'no almuerces', why:'From the yo form (almuerzo): drop the -o, and -zar verbs take c before the e.'},
+  {ask:'Tell a friend to say it', hint:'decir', answer:'di', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to say it', hint:'decir', answer:'no digas', why:'Negative tú starts from the yo form (digo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to do it', hint:'hacer', answer:'haz', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to do it', hint:'hacer', answer:'no hagas', why:'Negative tú starts from the yo form (hago): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to go', hint:'ir', answer:'ve', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to go', hint:'ir', answer:'no vayas', why:'ser and ir don\'t follow the yo rule — no seas and no vayas are simply known.'},
+  {ask:'Tell a friend to put it there', hint:'poner', answer:'pon', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to put it there', hint:'poner', answer:'no pongas', why:'Negative tú starts from the yo form (pongo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to go out', hint:'salir', answer:'sal', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to go out', hint:'salir', answer:'no salgas', why:'Negative tú starts from the yo form (salgo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to be', hint:'ser', answer:'sé', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to be', hint:'ser', answer:'no seas', why:'ser and ir don\'t follow the yo rule — no seas and no vayas are simply known.'},
+  {ask:'Tell a friend to have it', hint:'tener', answer:'ten', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to have it', hint:'tener', answer:'no tengas', why:'Negative tú starts from the yo form (tengo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to come', hint:'venir', answer:'ven', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to come', hint:'venir', answer:'no vengas', why:'Negative tú starts from the yo form (vengo): drop the -o and take the opposite ending, plus -s.'},
+  {ask:'Tell a friend to hold it in', hint:'contener', answer:'contén', why:'One of the irregular affirmative tú commands — these are memorised, not worked out.'},
+  {ask:'Tell a friend NOT to hold it in', hint:'contener', answer:'no contengas', why:'Negative tú starts from the yo form (contengo): drop the -o and take the opposite ending, plus -s.'},
+];
+
 // Drills belong to the unit that teaches them — Unit 1's gustar and
 // possessives are not what Unit 2 is working on. A unit with none still shows
 // the Grammar box, saying so, rather than the box disappearing.
@@ -607,6 +670,8 @@ const GRAMMAR=[
         choices:[['saber','💡'],['conocer','🤝']].map(([inf,ic])=>[form[inf][c.form],ic]),
         why:c.why,
       }))); } },
+  { id:'tu-commands', unit:'u2', name:'Mandatos de Tú', emoji:'👉', blurb:'telling a friend to do it, and not to',
+    build(){ return shuffle(TU_COMMANDS).slice(0,40); } },
 ];
 
 /* ============================ CULTURE ============================ */
