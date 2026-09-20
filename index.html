@@ -572,8 +572,11 @@ const SC_CONTEXTS=[
   {v:'conocer', ask:'They ____ the beaches near the hacienda', form:'ellos', why:'Conocer — places you are familiar with.'},
 ];
 
+// Drills belong to the unit that teaches them — Unit 1's gustar and
+// possessives are not what Unit 2 is working on. A unit with none still shows
+// the Grammar box, saying so, rather than the box disappearing.
 const GRAMMAR=[
-  { id:'gustar', name:'Gustar', emoji:'💚', blurb:'me / te / le / nos + gusta or gustan',
+  { id:'gustar', unit:'u1', name:'Gustar', emoji:'💚', blurb:'me / te / le / nos + gusta or gustan',
     build(){ const nouns=articleNouns();
       return shuffle(nouns.flatMap(n=>GUSTAR_PEOPLE.map(p=>({
         ask:`${p.en} · ${n.art} ${n.noun}`,
@@ -581,7 +584,7 @@ const GRAMMAR=[
         answer:`${p.pron} ${n.plural?'gustan':'gusta'} ${n.art} ${n.noun}`,
         why:n.plural?'The thing liked is plural, so gustan.':'The thing liked is singular, so gusta.',
       })))).slice(0,40); } },
-  { id:'posesivos', name:'Posesivos', emoji:'🔑', blurb:'mi · tu · su · nuestro, agreeing with the noun',
+  { id:'posesivos', unit:'u1', name:'Posesivos', emoji:'🔑', blurb:'mi · tu · su · nuestro, agreeing with the noun',
     build(){ const nouns=articleNouns();
       return shuffle(nouns.flatMap(n=>POSS_OWNERS.map(o=>({
         ask:`${o.en} · ${n.art} ${n.noun}`,
@@ -591,7 +594,7 @@ const GRAMMAR=[
           ? 'Nuestro is the one that changes for gender as well as number.'
           : (n.plural?'The noun is plural, so the possessive is too.':'The noun is singular, so the possessive is too.'),
       })))).slice(0,40); } },
-  { id:'saber-conocer', name:'Saber / Conocer', emoji:'🧠', blurb:'facts and skills vs. people and places',
+  { id:'saber-conocer', unit:'u1', name:'Saber / Conocer', emoji:'🧠', blurb:'facts and skills vs. people and places',
     build(){
       const form=Object.fromEntries(['saber','conocer'].map(inf=>
         [inf, conjugate(VERBS_CONJ.find(v=>v.inf===inf))]));
@@ -1161,8 +1164,15 @@ function renderVocabHome(c){
 }
 
 /* -------- Grammar: gustar and possessives -------- */
+const grammarHere = () => GRAMMAR.filter(g => g.unit === unit().id);
+
 function renderGrammarHome(c){
-  c.innerHTML=`<div class="hub">${GRAMMAR.map(g=>`
+  const drills = grammarHere();
+  if(drills.length===0){
+    c.innerHTML=`<div class="empty"><div class="em">🧩</div>No grammar drills for this unit yet.<br>Tell me the topic and I'll add one.</div>`;
+    return;
+  }
+  c.innerHTML=`<div class="hub">${drills.map(g=>`
     <div class="hubcard bigcard" data-drill="${esc(g.id)}">
       <span class="go">→</span><span class="ic big">${g.emoji}</span>
       <h3>${esc(g.name)}</h3><div class="meta">${esc(g.blurb)}</div>
@@ -1349,7 +1359,7 @@ function renderUnitHome(c){
   const cards=[
     {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
-    {key:'grammar', ic:'🧩', title:'Grammar', desc:GRAMMAR.map(g=>g.name).join(' · '), cls:''},
+    {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().map(g=>g.name).join(' · ') || 'Nothing added yet'), cls:''},
     {key:'culture', ic:'🌎', title:'Culture', desc: CULTURE.length
       ? `${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${CULTURE.reduce((a,t)=>a+t.facts.length,0)} facts`
       : 'Nothing added yet', cls:''},
