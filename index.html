@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spanish 3 Study Tool</title>
+<title>Spanish Study Tool</title>
 <style>
   :root{
     --bg:#f6f4fb; --card:#ffffff; --ink:#3a3550; --muted:#8b86a3;
@@ -238,7 +238,7 @@
 
 <script>
 /* ============================ DATA ============================ */
-const DATA = {
+let DATA = {
   units: [
     {
       id:"u1",
@@ -973,7 +973,7 @@ const IOP_ITEMS=[
 // Drills belong to the unit that teaches them — Unit 1's gustar and
 // possessives are not what Unit 2 is working on. A unit with none still shows
 // the Grammar box, saying so, rather than the box disappearing.
-const GRAMMAR=[
+let GRAMMAR=[
   { id:'gustar', unit:'u1', name:'Gustar', emoji:'💚', blurb:'me / te / le / nos + gusta or gustan',
     build(){ const nouns=articleNouns();
       return shuffle(nouns.flatMap(n=>GUSTAR_PEOPLE.map(p=>({
@@ -1040,7 +1040,7 @@ const GRAMMAR=[
 // Big topics, five facts each. Add a topic by adding an entry here — the
 // section counts them, and the matching quiz turns itself on once there are at
 // least two, because with one topic there is nothing to confuse it with.
-const CULTURE = [
+let CULTURE = [
   { id:'porque', name:'¿Por qué el español?', emoji:'🗣️', facts:[
     'Spanish is the 2nd most spoken language in the world: 636 million speakers, 519 million of them native. Mexico and Argentina have the most native speakers, and Colombia the most of all.',
     'The Americas are home to around 450 million Spanish speakers.',
@@ -1133,6 +1133,8 @@ function save(){ localStorage.setItem(LS, JSON.stringify({level:state.level,unit
 
 /* ============================ HELPERS ============================ */
 const unit = ()=>DATA.units[state.unitIdx];
+// "Unit 1–2", from the part of the name before the dash
+const unitLabel = (u=unit()) => u.name.split('—')[0].trim();
 const key = w => unit().id+"::"+w.es;
 const weekNum = label => { const m=/^Semana\s+(\d+)$/.exec(label||""); return m ? +m[1] : null; };
 // A word's weeks, always as a list, so `week:4` and `week:[3,4]` both read the same.
@@ -1295,7 +1297,7 @@ const VCAT_LABEL={all:"All verbs", regular:"Regular verbs", irregular:"Irregular
 const _reg=(inf,en)=>({inf,en,type:"regular"});
 const _boot=(inf,en,change)=>({inf,en,type:"boot",change});
 const _irr=(inf,en,forms)=>({inf,en,type:"irregular",forms});
-const VERBS_CONJ = [
+let VERBS_CONJ = [
   _reg("abordar","to board"),_reg("agarrar","to grab"),_reg("bajar","to go down"),_reg("besar","to kiss"),
   _reg("caminar","to walk"),_reg("cuidar","to take care of"),_reg("dejar","to leave"),_reg("desayunar","to eat breakfast"),
   _reg("funcionar","to work"),_reg("llegar","to arrive"),_reg("llevar","to carry"),_reg("llorar","to cry"),
@@ -1334,6 +1336,323 @@ const VERBS_CONJ = [
   _irr("conocer","to know",{yo:"conozco",tu:"conoces",el:"conoce",nos:"conocemos",vos:"conocéis",ellos:"conocen"}),
   _irr("caber","to fit",{yo:"quepo",tu:"cabes",el:"cabe",nos:"cabemos",vos:"cabéis",ellos:"caben"}),
 ];
+
+/* ============================ SPANISH 2 ============================ */
+// Same shape as Spanish 3: units of vocab sets, plus grammar drills, culture
+// topics and a verb list. Switching level swaps these in (see useLevel).
+// Words on the Semana 7 spelling / vocab sheet carry week:7.
+const S2_DATA = {
+  units: [
+    {
+      id:"s2u12",
+      name:"Unit 1–2 — De Compras",
+      sets:[
+        { name:"Items & Purchases", words:[
+          {es:"la calle", en:"street"},
+          {es:"la ciudad", en:"city"},
+          {es:"la comunidad", en:"community"},
+          {es:"la corbata", en:"tie"},
+          {es:"la gente", en:"people"},
+          {es:"los anteojos de sol", en:"sunglasses"},
+          {es:"los calcetines", en:"socks"},
+        ]},
+        { name:"Stores", words:[
+          {es:"el almacén (los almacenes)", en:"department store"},
+          {es:"el banco", en:"bank"},
+          {es:"el barrio", en:"neighborhood"},
+          {es:"el centro", en:"downtown"},
+          {es:"el edificio", en:"building"},
+          {es:"el lugar", en:"place"},
+          {es:"el mercado", en:"market"},
+          {es:"el supermercado", en:"supermarket"},
+          {es:"en la Red", en:"on the web/online"},
+          {es:"la carnicería", en:"butcher shop"},
+          {es:"la farmacia", en:"pharmacy"},
+          {es:"la heladería", en:"ice cream shop"},
+          {es:"la joyería", en:"jewelry store"},
+          {es:"la librería", en:"bookstore"},
+          {es:"la panadería", en:"bakery"},
+          {es:"la tienda", en:"store"},
+          {es:"la zapatería", en:"shoe store"},
+        ]},
+        { name:"Shopping Verbs", words:[
+          {es:"abrir", en:"to open"},
+          {es:"buscar", en:"to look for"},
+          {es:"cerrar (e-ie)", en:"to close"},
+          {es:"comprar", en:"to buy"},
+          {es:"devolver (o-ue)", en:"to return (an item)"},
+          {es:"entrar", en:"to enter"},
+          {es:"enviar", en:"to send"},
+          {es:"escoger", en:"to choose"},
+          {es:"mirar", en:"to look at"},
+          {es:"pagar", en:"to pay for"},
+          {es:"probarse (o-ue)", en:"to try on"},
+          {es:"vender", en:"to sell"},
+        ]},
+        { name:"Stem-Changing Verbs", words:[
+          {es:"almorzar (o-ue)", en:"to eat lunch"},
+          {es:"costar (o-ue)", en:"to cost"},
+          {es:"dormir (o-ue)", en:"to sleep"},
+          {es:"empezar (e-ie)", en:"to start/to begin"},
+          {es:"entender (e-ie)", en:"to understand"},
+          {es:"jugar (u-ue)", en:"to play"},
+          {es:"pedir (e-i)", en:"to ask for"},
+          {es:"pensar (e-ie)", en:"to think"},
+          {es:"poder (o-ue)", en:"to be able to/can"},
+          {es:"preferir (e-ie)", en:"to prefer"},
+          {es:"querer (e-ie)", en:"to want"},
+          {es:"repetir (e-i)", en:"to repeat"},
+          {es:"servir (e-i)", en:"to serve"},
+          {es:"volver (o-ue)", en:"to return/to come back"},
+        ]},
+        { name:"Negative & Affirmative Words", words:[
+          {es:"alguien", en:"someone"},
+          {es:"algún (alguna, algunos, algunas)", en:"some/any"},
+          {es:"nadie", en:"nobody/no one"},
+          {es:"ningún (ninguno, ninguna)", en:"no/none/not any"},
+          {es:"algo", en:"something"},
+          {es:"nada", en:"nothing"},
+          {es:"ni... ni", en:"neither... nor"},
+          {es:"también", en:"also/too"},
+          {es:"tampoco", en:"neither/either"},
+        ]},
+        { name:"Question Words", words:[
+          {es:"¿Por qué?", en:"why"},
+          {es:"¿Cuándo?", en:"when"},
+          {es:"¿Qué?", en:"what"},
+          {es:"¿Dónde?", en:"where"},
+          {es:"¿De dónde?", en:"from where"},
+          {es:"¿Cuánto (-a)?", en:"how much"},
+          {es:"¿Cuántos (-as)?", en:"how many"},
+          {es:"¿Cómo?", en:"how"},
+          {es:"¿Quién?", en:"who"},
+          {es:"¿Cuál?", en:"which"},
+        ]},
+        { name:"Other Words", words:[
+          {es:"barato (-a)", en:"inexpensive/cheap"},
+          {es:"caro (-a)", en:"expensive"},
+        ]},
+      ]
+    },
+    {
+      id:"s2u3",
+      name:"Unit 3 — ¿Cómo te preparas?",
+      sets:[
+        { name:"Getting Ready", words:[
+          {es:"acostarse (o-ue)", en:"to go to bed", week:7},
+          {es:"afeitarse", en:"to shave"},
+          {es:"arreglarse (el pelo)", en:"to fix (one's hair)", week:7},
+          {es:"bañarse", en:"to take a bath", week:7},
+          {es:"cepillarse (los dientes)", en:"to brush (one's teeth)"},
+          {es:"cortarse el pelo", en:"to cut one's hair", week:7},
+          {es:"despertarse (e-ie)", en:"to wake up"},
+          {es:"ducharse", en:"to take a shower"},
+          {es:"levantarse", en:"to get up", week:7},
+          {es:"lavarse (la cara)", en:"to wash (one's face)"},
+          {es:"maquillarse", en:"to put on makeup"},
+          {es:"pedir prestado (-a) (a)", en:"to borrow (from)"},
+          {es:"pintarse (las uñas)", en:"to paint/to polish (one's nails)"},
+          {es:"ponerse", en:"to put on"},
+          {es:"prepararse", en:"to get ready"},
+          {es:"quitarse la ropa", en:"to take off one's clothes"},
+          {es:"secarse", en:"to dry (oneself)", week:7},
+          {es:"vestirse (e-i)", en:"to get dressed", week:7},
+        ]},
+        { name:"Things You Need", words:[
+          {es:"el agua de colonia", en:"cologne"},
+          {es:"el cepillo", en:"brush", week:7},
+          {es:"el cinturón (los cinturones)", en:"belt(s)", week:7},
+          {es:"el desodorante", en:"deodorant", week:7},
+          {es:"el despertador", en:"alarm clock", week:7},
+          {es:"la ducha", en:"shower"},
+          {es:"el gel", en:"gel"},
+          {es:"las joyas (de oro, de plata)", en:"(gold, silver) jewelry", week:7},
+          {es:"los labios", en:"lips"},
+          {es:"el maquillaje", en:"makeup"},
+          {es:"el peine", en:"comb", week:7},
+          {es:"el pelo", en:"hair"},
+          {es:"el salón de belleza", en:"beauty salon"},
+          {es:"el secador", en:"blow dryer", week:7},
+          {es:"la toalla", en:"towel"},
+          {es:"las uñas", en:"nails", week:7},
+        ]},
+        { name:"Special Events", words:[
+          {es:"la audición (las audiciones)", en:"audition(s)", week:7},
+          {es:"la boda", en:"wedding", week:7},
+          {es:"la cita", en:"date/appointment", week:7},
+          {es:"el concurso", en:"contest", week:7},
+          {es:"un evento especial", en:"special event"},
+        ]},
+        { name:"How You Feel", words:[
+          {es:"entusiasmado (-a)", en:"excited"},
+          {es:"nervioso (-a)", en:"nervous"},
+          {es:"tranquilo (-a)", en:"calm", week:7},
+        ]},
+        { name:"Other Useful Words", words:[
+          {es:"antes de (+ infinitive)", en:"before"},
+          {es:"cómodo (-a)", en:"comfortable", week:7},
+          {es:"depende", en:"it depends"},
+          {es:"elegante", en:"elegant", week:7},
+          {es:"lentamente", en:"slowly", week:7},
+          {es:"luego", en:"then/later", week:7},
+          {es:"por ejemplo", en:"for example", week:7},
+          {es:"rápidamente", en:"quickly"},
+          {es:"te ves (bien)", en:"you look (good)"},
+        ]},
+      ]
+    }
+  ]
+};
+
+const S2_VERBS = [
+  _reg("abrir","to open"),_reg("buscar","to look for"),_boot("cerrar","to close","e-ie"),_reg("comprar","to buy"),
+  _boot("devolver","to return (an item)","o-ue"),_reg("entrar","to enter"),
+  _irr("enviar","to send",{yo:"envío",tu:"envías",el:"envía",nos:"enviamos",vos:"enviáis",ellos:"envían"}),
+  _irr("escoger","to choose",{yo:"escojo",tu:"escoges",el:"escoge",nos:"escogemos",vos:"escogéis",ellos:"escogen"}),
+  _reg("mirar","to look at"),_reg("pagar","to pay for"),_boot("probarse","to try on","o-ue"),_reg("vender","to sell"),
+  _boot("almorzar","to eat lunch","o-ue"),_boot("costar","to cost","o-ue"),_boot("dormir","to sleep","o-ue"),
+  _boot("empezar","to start","e-ie"),_boot("entender","to understand","e-ie"),_boot("jugar","to play","u-ue"),
+  _boot("pedir","to ask for","e-i"),_boot("pensar","to think","e-ie"),_boot("poder","to be able to","o-ue"),
+  _boot("preferir","to prefer","e-ie"),_boot("querer","to want","e-ie"),_boot("repetir","to repeat","e-i"),
+  _boot("servir","to serve","e-i"),_boot("volver","to return","o-ue"),
+  _boot("acostarse","to go to bed","o-ue"),_reg("afeitarse","to shave"),_reg("arreglarse","to fix (one's hair)"),
+  _reg("bañarse","to take a bath"),_reg("cepillarse","to brush (one's teeth)"),_reg("cortarse","to cut (one's hair)"),
+  _boot("despertarse","to wake up","e-ie"),_reg("ducharse","to take a shower"),_reg("levantarse","to get up"),
+  _reg("lavarse","to wash (oneself)"),_reg("maquillarse","to put on makeup"),_reg("pintarse","to paint (one's nails)"),
+  _irr("ponerse","to put on",{yo:"pongo",tu:"pones",el:"pone",nos:"ponemos",vos:"ponéis",ellos:"ponen"}),
+  _reg("prepararse","to get ready"),_reg("quitarse","to take off"),_reg("secarse","to dry (oneself)"),
+  _boot("vestirse","to get dressed","e-i"),
+  _irr("ser","to be",{yo:"soy",tu:"eres",el:"es",nos:"somos",vos:"sois",ellos:"son"}),
+  _irr("estar","to be",{yo:"estoy",tu:"estás",el:"está",nos:"estamos",vos:"estáis",ellos:"están"}),
+];
+
+// Ser vs estar: the worksheet's 14, then more with this unit's words.
+// N.O.T.I.C.E. takes ser, P.L.A.C.E. takes estar.
+const SER_ESTAR_FORMS = { yo:['soy','estoy'], tu:['eres','estás'], el:['es','está'], nos:['somos','estamos'], ellos:['son','están'] };
+const SER_ESTAR_WHY = {
+  N:'Nationality → ser (N in NOTICE).', O:'Origin, where someone is from → ser (O in NOTICE).',
+  T:'Time, days and dates → ser (T in NOTICE).', I:'Identity, who or what someone is, like a job → ser (I in NOTICE).',
+  C:'Characteristics, what someone or something is like → ser (C in NOTICE).',
+  E:'Event: where or when an event happens → ser (E in NOTICE), even though it\'s a place.',
+  P:'Placement, where a thing is → estar (P in PLACE).', L:'Location, where someone is → estar (L in PLACE).',
+  Cd:'Condition, how someone is right now → estar (C in PLACE).', Em:'Emotion → estar (E in PLACE).',
+};
+const SER_ESTAR_ITEMS = [
+  ['Ella ___ bonita, alta y simpática.','el','ser','C'],
+  ['Yo ___ de California.','yo','ser','O'],
+  ['Tú ___ en la casa de José.','tu','estar','L'],
+  ['Ellos ___ dentistas.','ellos','ser','I'],
+  ['Él ___ enfermo.','el','estar','Cd'],
+  ['Usted ___ mi profesor.','el','ser','I'],
+  ['Ustedes ___ contentos.','ellos','estar','Em'],
+  ['Los cuadernos ___ debajo de la mesa.','ellos','estar','P'],
+  ['Tú ___ en la iglesia.','tu','estar','L'],
+  ['Hoy ___ martes.','el','ser','T'],
+  ['___ las once y media.','ellos','ser','T'],
+  ['La piscina ___ grande.','el','ser','C'],
+  ['Mi familia ___ pequeña.','el','ser','C'],
+  ['El estudiante ___ en la clase.','el','estar','L'],
+  ['La boda ___ en la iglesia.','el','ser','E'],
+  ['El concurso ___ a las ocho.','el','ser','E'],
+  ['Yo ___ nervioso antes de la audición.','yo','estar','Em'],
+  ['Nosotros ___ entusiasmados.','nos','estar','Em'],
+  ['El secador ___ en el baño.','el','estar','P'],
+  ['Ellos ___ mexicanos.','ellos','ser','N'],
+  ['La cita ___ a las tres.','el','ser','T'],
+  ['Mi peine ___ en mi mochila.','el','estar','P'],
+  ['¿De dónde ___ tú?','tu','ser','O'],
+  ['Mis padres ___ cansados.','ellos','estar','Cd'],
+  ['Nosotros ___ estudiantes.','nos','ser','I'],
+  ['Hoy ___ el cinco de octubre.','el','ser','T'],
+  ['Tú ___ muy tranquila hoy.','tu','estar','Em'],
+  ['Mi hermano ___ alto y cómico.','el','ser','C'],
+  ['La fiesta ___ en mi casa.','el','ser','E'],
+  ['Yo ___ en el salón de belleza.','yo','estar','L'],
+].map(([ask, form, verb, why])=>{
+  const [s, e] = SER_ESTAR_FORMS[form];
+  return { ask, hint:'ser or estar?', answer: verb==='ser' ? s : e, choices:[[s,'🆔'],[e,'📍']], why:SER_ESTAR_WHY[why] };
+});
+
+// Two verbs together: the pronoun goes before the conjugated verb, or on the
+// end of the infinitive. Both are right, so both are accepted.
+const REFLEX_INF_ITEMS = [
+  ['I am going to shower.','ir + ducharse','voy a ducharme','me voy a duchar'],
+  ['She needs to put on makeup.','necesitar + maquillarse','necesita maquillarse','se necesita maquillar'],
+  ['You (tú) can get dressed.','poder + vestirse','puedes vestirte','te puedes vestir'],
+  ['They are going to brush their teeth.','ir + cepillarse los dientes','van a cepillarse los dientes','se van a cepillar los dientes'],
+  ['I have to shower.','tener que + ducharse','tengo que ducharme','me tengo que duchar'],
+  ['He needs to shave today.','necesitar + afeitarse + hoy','necesita afeitarse hoy','se necesita afeitar hoy'],
+  ['We want to get ready.','querer + prepararse','queremos prepararnos','nos queremos preparar'],
+  ['I prefer to take a bath.','preferir + bañarse','prefiero bañarme','me prefiero bañar'],
+  ['You (tú) are going to dry your hair.','ir + secarse el pelo','vas a secarte el pelo','te vas a secar el pelo'],
+  ['They want to go to bed early.','querer + acostarse + temprano','quieren acostarse temprano','se quieren acostar temprano'],
+  ['I need to get up at six.','necesitar + levantarse + a las seis','necesito levantarme a las seis','me necesito levantar a las seis'],
+  ['She is going to paint her nails.','ir + pintarse las uñas','va a pintarse las uñas','se va a pintar las uñas'],
+  ['We have to wash our faces.','tener que + lavarse la cara','tenemos que lavarnos la cara','nos tenemos que lavar la cara'],
+  ['You (tú) can put on the belt.','poder + ponerse el cinturón','puedes ponerte el cinturón','te puedes poner el cinturón'],
+].map(([ask, hint, a, b])=>({ ask, hint, answer:`${a} / ${b}`,
+  why:'With a conjugated verb + infinitive, the pronoun goes on the end of the infinitive, or before the conjugated verb. Either one is right.' }));
+
+const QUESTION_ITEMS = [
+  ['¿___ cuesta la corbata?','how much','Cuánto'],
+  ['¿___ está el banco?','where','Dónde'],
+  ['¿___ es usted?','from where','De dónde'],
+  ['¿___ abre la panadería?','when','Cuándo'],
+  ['¿___ compras en la joyería?','what','Qué'],
+  ['¿___ es tu tienda favorita?','which','Cuál'],
+  ['¿___ trabaja en la farmacia?','who','Quién'],
+  ['¿___ calcetines necesitas?','how many','Cuántos'],
+  ['¿___ camisas compras?','how many (feminine)','Cuántas'],
+  ['¿___ vas al centro?','why','Por qué'],
+  ['¿___ pagas, con dinero o en la Red?','how','Cómo'],
+  ['¿___ es la zapatería, en la calle Ocho?','where','Dónde'],
+].map(([ask, hint, answer])=>({ ask, hint, answer,
+  why:'Every question word carries an accent: qué, cuándo, dónde, cuánto, cómo, quién, cuál.' }));
+
+const NEGATIVE_ITEMS = [
+  ['No hay ___ en la tienda.','nobody','nadie'],
+  ['¿Quieres ___ de la panadería?','something','algo'],
+  ['No compro ___.','nothing','nada'],
+  ['___ está en la puerta.','someone','alguien'],
+  ['No me gusta el mercado. A mí ___.','neither','tampoco'],
+  ['Me gusta la heladería. A mí ___.','also','también'],
+  ['No tengo ___ corbata.','not any (feminine)','ninguna'],
+  ['¿Tienes ___ libros de la librería?','some (masc. plural)','algunos'],
+  ['No quiero ___ los calcetines ___ la corbata.','neither… nor','ni ni'],
+  ['No hay ___ almacén en mi barrio.','not any (masculine)','ningún'],
+  ['Hay ___ tienda en la calle.','some (feminine)','alguna'],
+  ['No veo a ___ en el edificio.','nobody','nadie'],
+].map(([ask, hint, answer])=>({ ask, hint, answer,
+  why:'Spanish keeps the "no" with a negative word: no hay nadie, no compro nada. Ningún and algún drop the -o before a masculine noun.' }));
+
+const S2_GRAMMAR = [
+  { id:'s2-preguntas', unit:'s2u12', name:'Palabras Interrogativas', emoji:'❓', blurb:'qué · cuándo · dónde · cuánto · quién · cuál',
+    build(){ return shuffle(QUESTION_ITEMS); } },
+  { id:'s2-negativos', unit:'s2u12', name:'Negativos y Afirmativos', emoji:'➕', blurb:'alguien / nadie · algo / nada · también / tampoco',
+    build(){ return shuffle(NEGATIVE_ITEMS); } },
+  { id:'s2-ser-estar', unit:'s2u3', name:'Ser vs Estar', emoji:'⚖️', blurb:'NOTICE takes ser · PLACE takes estar',
+    build(){ return shuffle(SER_ESTAR_ITEMS); } },
+  { id:'s2-reflexivos', unit:'s2u3', name:'Verbos Reflexivos', emoji:'🪞', blurb:'me levanto · te duchas · se viste',
+    build(){
+      const vs = S2_VERBS.filter(v=>v.inf.endsWith('se'));
+      return shuffle(vs.flatMap(v=>{ const f=conjugate(v);
+        return FORMS.filter(k=>k!=='vos').map(k=>{ const p=pickSubj(k);
+          return { ask:`${p.es} · ${v.inf}`, hint:v.en, answer:f[k],
+            why:'The pronoun matches the subject (me, te, se, nos, se) and goes right before the conjugated verb.' }; }); })).slice(0,40); } },
+  { id:'s2-reflex-inf', unit:'s2u3', name:'Reflexivos con Infinitivo', emoji:'✌️', blurb:'voy a ducharme = me voy a duchar',
+    build(){ return shuffle(REFLEX_INF_ITEMS); } },
+];
+
+// Each level's material; useLevel() swaps it into DATA / GRAMMAR / CULTURE / VERBS_CONJ.
+const LEVEL_DATA = {
+  3: { DATA, GRAMMAR, CULTURE, VERBS_CONJ },
+  2: { DATA:S2_DATA, GRAMMAR:S2_GRAMMAR, CULTURE:[], VERBS_CONJ:S2_VERBS },
+};
+function useLevel(n){
+  const d = LEVEL_DATA[n] || LEVEL_DATA[3];
+  DATA = d.DATA; GRAMMAR = d.GRAMMAR; CULTURE = d.CULTURE; VERBS_CONJ = d.VERBS_CONJ;
+  if(state.unitIdx >= DATA.units.length) state.unitIdx = 0;
+}
 const catCount = t => t==="all" ? VERBS_CONJ.length : VERBS_CONJ.filter(v=>v.type===t).length;
 const catVerbs = () => state.vcat==="all" ? VERBS_CONJ : VERBS_CONJ.filter(v=>v.type===state.vcat);
 function ensureCSelected(){ if(state.cselected===null){ state.cselected={}; VERBS_CONJ.forEach(v=>state.cselected[v.inf]=true); } }
@@ -1341,25 +1660,35 @@ const cIsSel = v => state.cselected===null ? true : !!state.cselected[v.inf];
 const cIncluded = () => catVerbs().filter(cIsSel);
 
 /* ============================ RENDER ============================ */
-// Spanish 3 is the only level with material so far; 1 and 2 say "coming soon"
-const LEVELS = [1, 2, 3];
+// Spanish 2 and 3 have material; 1 says "coming soon"
+const LEVELS = [1, 2, 3], READY = [2, 3];
 function renderLevels(){
   const lv = state.level || 3;
   document.getElementById("levelbar").innerHTML = `<span class="lb-title">🇪🇸 Spanish</span><div class="levels">${LEVELS.map(n=>
-    `<button class="level ${n===lv?'active':''}" data-level="${n}">Spanish ${n}${n===3?'':'<small>soon</small>'}</button>`).join('')}</div>`;
-  document.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{ state.level=+b.dataset.level; render(); window.scrollTo(0,0); });
-  const soon = document.getElementById("soon");
-  soon.hidden = lv===3; document.getElementById("wrap").hidden = lv!==3;
-  if(lv!==3) soon.innerHTML = `<div class="card"><div class="big">🚧</div><h2>Spanish ${lv}: coming soon</h2>
-    <p>This level is still being built. Spanish 3 is ready to study now.</p><button class="pill" data-level="3">Go to Spanish 3</button></div>`;
-  soon.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{ state.level=3; render(); });
-  return lv===3;
+    `<button class="level ${n===lv?'active':''}" data-level="${n}">Spanish ${n}${READY.includes(n)?'':'<small>soon</small>'}</button>`).join('')}</div>`;
+  document.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>switchLevel(+b.dataset.level));
+  const ready = READY.includes(lv), soon = document.getElementById("soon");
+  soon.hidden = ready; document.getElementById("wrap").hidden = !ready;
+  document.title = `Spanish ${lv} Study Tool`;
+  if(!ready) soon.innerHTML = `<div class="card"><div class="big">🚧</div><h2>Spanish ${lv}: coming soon</h2>
+    <p>This level is still being built. Spanish 2 and 3 are ready to study now.</p><button class="pill" data-level="2">Go to Spanish 2</button> <button class="pill" data-level="3">Go to Spanish 3</button></div>`;
+  soon.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>switchLevel(+b.dataset.level));
+  return ready;
+}
+// a fresh start in the new level: its own units, verbs and drills
+function switchLevel(n){
+  if(n === (state.level||3)) return;
+  state.level = n;
+  if(READY.includes(n)) useLevel(n);
+  Object.assign(state, { unitIdx:0, view:"unit", section:"All", week:"All", expanded:false, pstep:null, vcat:"all",
+    tsession:null, gtopic:null, gsession:null, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, selected:null, session:null });
+  render(); window.scrollTo(0,0);
 }
 function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderContent(); } save(); }
 
 function renderSidebar(){
   const sb=document.getElementById("sidebar");
-  let h=`<div class="brand"><span class="flag">🇪🇸</span><div><h1>Spanish 3</h1><small>Study Tool</small></div></div>`;
+  let h=`<div class="brand"><span class="flag">🇪🇸</span><div><h1>Spanish ${state.level||3}</h1><small>Study Tool</small></div></div>`;
   h+=`<div class="side-label">Units</div>`;
   DATA.units.forEach((u,i)=>{
     const n=u.sets.reduce((a,s)=>a+s.words.length,0);
@@ -1368,7 +1697,7 @@ function renderSidebar(){
     h+=`<div class="unit-row">
           <button class="navbtn unit-tab ${active?'active':''}" data-unit="${i}">
             <span class="dot"></span>
-            <span class="ut-label">Unit ${i+1}${theme?`<small>${esc(theme)}</small>`:''}</span>
+            <span class="ut-label">${esc(unitLabel(u))}${theme?`<small>${esc(theme)}</small>`:''}</span>
             <span class="cnt">${n}</span>
           </button>
           <button class="ut-caret" data-toggle="${i}" title="Show Vocab & Verbs">${active&&state.expanded?'▾':'▸'}</button>
@@ -1394,14 +1723,14 @@ function renderTop(){
   const dirLabel = state.direction==="es2en" ? "Español → English" : "English → Español";
   const uTheme=(unit().name.split('—')[1]||'').trim();
   if(state.view==="unit"){
-    t.innerHTML=`<div><h2>Unit ${state.unitIdx+1}${uTheme?` — ${esc(uTheme)}`:''}</h2><div class="sub">Choose what to study</div></div>`;
+    t.innerHTML=`<div><h2>${unitLabel()}${uTheme?` — ${esc(uTheme)}`:''}</h2><div class="sub">Choose what to study</div></div>`;
     return;
   }
   if(state.view==="grammar"){
     const inDrill = !!state.gsession;
     const g = inDrill ? GRAMMAR.find(x=>x.id===state.gsession.drill) : null;
     t.innerHTML=`
-      <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : 'Unit '+(state.unitIdx+1)}</button>
+      <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : unitLabel()}</button>
       <div><h2>${inDrill ? esc(g.name) : 'Grammar'}</h2>
       <div class="sub">${inDrill ? esc(g.blurb) : 'Gustar and possessives'}</div></div>`;
     t.querySelector("#back").onclick=()=>{ if(inDrill){ state.gsession=null; state.gtopic=null; } else state.view="unit"; render(); };
@@ -1410,7 +1739,7 @@ function renderTop(){
   if(state.view==="culture"){
     const inQuiz = !!state.fsession, inTopic = !!state.ctopic;
     t.innerHTML=`
-      <button class="backbtn" id="back">← ${inQuiz||inTopic ? 'Culture' : 'Unit '+(state.unitIdx+1)}</button>
+      <button class="backbtn" id="back">← ${inQuiz||inTopic ? 'Culture' : unitLabel()}</button>
       <div><h2>${inQuiz ? 'Match the facts' : inTopic ? 'Topic' : 'Culture'}</h2>
       <div class="sub">${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${factCount()} facts</div></div>`;
     t.querySelector("#back").onclick=()=>{
@@ -1424,7 +1753,7 @@ function renderTop(){
     // isn't a one-way door out of the whole area.
     const inType = !!state.tsession;
     t.innerHTML=`
-      <button class="backbtn" id="back">← ${inType ? 'Verbs' : 'Unit '+(state.unitIdx+1)}</button>
+      <button class="backbtn" id="back">← ${inType ? 'Verbs' : unitLabel()}</button>
       <div><h2>${inType ? 'Which type is it?' : 'Verbs'}</h2>
       <div class="sub">${inType ? 'Regular · boot · irregular' : 'Conjugation practice'}</div></div>`;
     t.querySelector("#back").onclick=()=>{ if(inType) state.tsession=null; else state.view="unit"; render(); };
@@ -1432,7 +1761,7 @@ function renderTop(){
   }
   if(state.view==="vocab"){
     t.innerHTML=`
-      <button class="backbtn" id="back">← Unit ${state.unitIdx+1}</button>
+      <button class="backbtn" id="back">← ${unitLabel()}</button>
       <div><h2>Vocabulary</h2><div class="sub">Choose a set</div></div>`;
     t.querySelector("#back").onclick=()=>{state.view="unit"; render();};
     return;
@@ -2092,6 +2421,9 @@ function renderCQuiz(c){
 
 /* -------- Vocab hub (boxes) -------- */
 const SEC_ICON={"All":"✨","Los Sustantivos":"🧱","Los Adjetivos":"🎨","Los Verbos":"⚡","Las Preguntas":"❓","Otras Palabras":"💬"};
+Object.assign(SEC_ICON, {"Items & Purchases":"🛍️","Stores":"🏪","Shopping Verbs":"💳","Stem-Changing Verbs":"🥾",
+  "Negative & Affirmative Words":"➕","Question Words":"❓","Other Words":"💬","Getting Ready":"🪥",
+  "Things You Need":"🧴","Special Events":"🎉","How You Feel":"😊","Other Useful Words":"💬"});
 function renderHub(c){
   ensureSelectedObj();
   const all=[]; unit().sets.forEach(s=>s.words.forEach(w=>all.push(w)));
@@ -2265,7 +2597,7 @@ function renderFlash(c){
 }
 
 /* ============================ INIT ============================ */
-load(); render();
+load(); useLevel(READY.includes(state.level) ? state.level : 3); render();
 </script>
 </body>
 </html>
