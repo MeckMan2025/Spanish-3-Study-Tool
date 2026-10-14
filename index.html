@@ -18,7 +18,7 @@
     background:linear-gradient(160deg,#f7f2fb,#eef6f6);
     color:var(--ink); min-height:100vh;
   }
-  .wrap{display:flex; min-height:100vh}
+  .wrap{display:flex; min-height:calc(100vh - 60px)}
   .wrap[hidden],.soon[hidden]{display:none}
 
   /* ---------- Level picker (Spanish 1 / 2 / 3) ---------- */
@@ -34,6 +34,8 @@
     .levels{flex:1; min-width:0} .level{flex:1; padding:8px 4px; font-size:12.5px}
     .level small{display:block; margin:0}
   }
+  .credit{margin-top:auto; padding:18px 16px 22px; text-align:center; font-size:12.5px; font-weight:700; color:var(--muted)}
+  .credit a{color:var(--accent-d); text-decoration:none} .credit a:hover{text-decoration:underline}
   .soon{display:grid; place-items:center; min-height:calc(100vh - 60px); padding:24px 16px}
   .soon .card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:36px 28px; text-align:center; max-width:440px; box-shadow:0 6px 24px rgba(120,100,170,.08)}
   .soon .big{font-size:44px}
@@ -228,11 +230,13 @@
 <body>
 <div class="levelbar" id="levelbar"></div>
 <div class="soon" id="soon" hidden></div>
+<div id="soonCredit" hidden><div class="credit">Made by <a href="https://meckman2025.github.io/portfolio/" target="_blank" rel="noopener">Kayden</a></div></div>
 <div class="wrap" id="wrap">
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main">
     <div class="topbar" id="topbar"></div>
     <div class="content" id="content"></div>
+    <div class="credit">Made by <a href="https://meckman2025.github.io/portfolio/" target="_blank" rel="noopener">Kayden</a></div>
   </main>
 </div>
 
@@ -1668,7 +1672,7 @@ function renderLevels(){
     `<button class="level ${n===lv?'active':''}" data-level="${n}">Spanish ${n}${READY.includes(n)?'':'<small>soon</small>'}</button>`).join('')}</div>`;
   document.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>switchLevel(+b.dataset.level));
   const ready = READY.includes(lv), soon = document.getElementById("soon");
-  soon.hidden = ready; document.getElementById("wrap").hidden = !ready;
+  soon.hidden = ready; document.getElementById("wrap").hidden = !ready; document.getElementById("soonCredit").hidden = ready;
   document.title = `Spanish ${lv} Study Tool`;
   if(!ready) soon.innerHTML = `<div class="card"><div class="big">🚧</div><h2>Spanish ${lv}: coming soon</h2>
     <p>This level is still being built. Spanish 2 and 3 are ready to study now.</p><button class="pill" data-level="2">Go to Spanish 2</button> <button class="pill" data-level="3">Go to Spanish 3</button></div>`;
