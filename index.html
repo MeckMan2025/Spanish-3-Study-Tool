@@ -19,6 +19,26 @@
     color:var(--ink); min-height:100vh;
   }
   .wrap{display:flex; min-height:100vh}
+  .wrap[hidden],.soon[hidden]{display:none}
+
+  /* ---------- Level picker (Spanish 1 / 2 / 3) ---------- */
+  .levelbar{display:flex; align-items:center; gap:10px; padding:10px 16px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap}
+  .levelbar .lb-title{font-weight:800; font-size:13px; color:var(--muted); margin-right:4px}
+  .levels{display:flex; gap:4px; background:#f0ebf8; padding:4px; border-radius:12px}
+  .level{border:none; background:transparent; padding:8px 16px; border-radius:9px; font-weight:800; font-size:13.5px; color:var(--muted); cursor:pointer; transition:.15s}
+  .level:hover{color:var(--ink)}
+  .level.active{background:#fff; color:var(--accent-d); box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .level small{font-weight:700; font-size:10.5px; opacity:.75; margin-left:4px}
+  @media (max-width:520px){
+    .levelbar{padding:8px 10px} .levelbar .lb-title{display:none}
+    .levels{flex:1; min-width:0} .level{flex:1; padding:8px 4px; font-size:12.5px}
+    .level small{display:block; margin:0}
+  }
+  .soon{display:grid; place-items:center; min-height:calc(100vh - 60px); padding:24px 16px}
+  .soon .card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:36px 28px; text-align:center; max-width:440px; box-shadow:0 6px 24px rgba(120,100,170,.08)}
+  .soon .big{font-size:44px}
+  .soon h2{margin:10px 0 6px; font-size:24px}
+  .soon p{color:var(--muted); margin:0 0 18px; line-height:1.5}
 
   /* ---------- Sidebar ---------- */
   .sidebar{
@@ -206,7 +226,9 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="levelbar" id="levelbar"></div>
+<div class="soon" id="soon" hidden></div>
+<div class="wrap" id="wrap">
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main">
     <div class="topbar" id="topbar"></div>
@@ -1107,7 +1129,7 @@ function load(){
   if(!["unit","vocab","verbs","section","conjugate","culture","grammar"].includes(state.view)) state.view="unit";
   state.session=null;
 }
-function save(){ localStorage.setItem(LS, JSON.stringify({unitIdx:state.unitIdx,view:state.view,section:state.section,week:state.week,mode:state.mode,direction:state.direction,expanded:state.expanded,selected:state.selected})); }
+function save(){ localStorage.setItem(LS, JSON.stringify({level:state.level,unitIdx:state.unitIdx,view:state.view,section:state.section,week:state.week,mode:state.mode,direction:state.direction,expanded:state.expanded,selected:state.selected})); }
 
 /* ============================ HELPERS ============================ */
 const unit = ()=>DATA.units[state.unitIdx];
@@ -1319,7 +1341,21 @@ const cIsSel = v => state.cselected===null ? true : !!state.cselected[v.inf];
 const cIncluded = () => catVerbs().filter(cIsSel);
 
 /* ============================ RENDER ============================ */
-function render(){ renderSidebar(); renderTop(); renderContent(); save(); }
+// Spanish 3 is the only level with material so far; 1 and 2 say "coming soon"
+const LEVELS = [1, 2, 3];
+function renderLevels(){
+  const lv = state.level || 3;
+  document.getElementById("levelbar").innerHTML = `<span class="lb-title">🇪🇸 Spanish</span><div class="levels">${LEVELS.map(n=>
+    `<button class="level ${n===lv?'active':''}" data-level="${n}">Spanish ${n}${n===3?'':'<small>soon</small>'}</button>`).join('')}</div>`;
+  document.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{ state.level=+b.dataset.level; render(); window.scrollTo(0,0); });
+  const soon = document.getElementById("soon");
+  soon.hidden = lv===3; document.getElementById("wrap").hidden = lv!==3;
+  if(lv!==3) soon.innerHTML = `<div class="card"><div class="big">🚧</div><h2>Spanish ${lv}: coming soon</h2>
+    <p>This level is still being built. Spanish 3 is ready to study now.</p><button class="pill" data-level="3">Go to Spanish 3</button></div>`;
+  soon.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{ state.level=3; render(); });
+  return lv===3;
+}
+function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderContent(); } save(); }
 
 function renderSidebar(){
   const sb=document.getElementById("sidebar");
