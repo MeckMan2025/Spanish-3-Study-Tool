@@ -1139,6 +1139,8 @@ function save(){ localStorage.setItem(LS, JSON.stringify({level:state.level,unit
 const unit = ()=>DATA.units[state.unitIdx];
 // "Unit 1–2", from the part of the name before the dash
 const unitLabel = (u=unit()) => u.name.split('—')[0].trim();
+// culture topics for this unit: a topic with `unit:` shows only there; one without shows in every unit
+const cultureHere = () => CULTURE.filter(t => !t.unit || t.unit === unit().id);
 const key = w => unit().id+"::"+w.es;
 const weekNum = label => { const m=/^Semana\s+(\d+)$/.exec(label||""); return m ? +m[1] : null; };
 // A word's weeks, always as a list, so `week:4` and `week:[3,4]` both read the same.
@@ -2432,6 +2434,10 @@ const S2_GRAMMAR = [
     build(){ return shuffle(NEGATIVE_ITEMS); } },
   { id:'s2-ser-estar', unit:'s2u3', name:'Ser vs Estar', emoji:'⚖️', blurb:'NOTICE takes ser · PLACE takes estar',
     build(){ return shuffle(SER_ESTAR_ITEMS); } },
+  // Same sentences, but only the choice: is it ser or estar? No conjugating.
+  { id:'s2-ser-o-estar', unit:'s2u3', name:'¿Ser o Estar?', emoji:'🤔', blurb:'just pick the verb — no conjugating',
+    build(){ return shuffle(SER_ESTAR_ITEMS.map(it=>{ const ser = it.answer === it.choices[0][0];
+      return { ask:it.ask, hint:'ser or estar?', answer: ser ? 'ser' : 'estar', choices:[['ser','🆔'],['estar','📍']], why:it.why }; })); } },
   { id:'s2-reflexivos', unit:'s2u3', name:'Verbos Reflexivos', emoji:'🪞', blurb:'me levanto · te duchas · se viste',
     build(){
       const vs = S2_VERBS.filter(v=>v.inf.endsWith('se'));
@@ -2475,10 +2481,68 @@ const S2_GRAMMAR = [
     build(){ return shuffle(ACCIDENT_ITEMS); } },
 ];
 
+
+// Spanish 2 culture: the Viernes readings from Unit 1–2, plus the review sheet.
+// Every topic has several facts, so the matching quiz has something to tell apart.
+const S2_CULTURE = [
+  { id:'guanajuato', unit:'s2u12', name:'Guanajuato', emoji:'🇲🇽', facts:[
+    'A city in the center of Mexico.',
+    'A very colorful city with small streets and underground tunnels.',
+    'It has a lot of history connected to Mexican independence.',
+    'You can visit museums, statues and theaters.',
+    'It has art, music and film festivals: an artistic and very special city.',
+  ]},
+  { id:'salto-angel', unit:'s2u12', name:'El Salto Ángel', emoji:'💧', facts:[
+    'It is in Venezuela, in Canaima National Park.',
+    'The tallest waterfall in the world.',
+    'The water falls from a very tall mountain in the jungle.',
+    'You can see it by boat or by plane.',
+    'You can explore nature and see exotic animals there.',
+  ]},
+  { id:'toledo', unit:'s2u12', name:'Toledo', emoji:'⚔️', facts:[
+    'In the center of Spain, near Madrid.',
+    'An old city with Christian, Jewish and Muslim history.',
+    'You can walk its stone streets, visit churches and see art by El Greco.',
+    'It has castles, museums, and many shops with swords and typical sweets. It is known for impressive swords.',
+    'From the high part of the city you can see the whole valley.',
+  ]},
+  { id:'cartagena', unit:'s2u12', name:'Cartagena', emoji:'🏰', facts:[
+    'On the coast of Colombia, in the north of the country.',
+    'Famous for its walled city and colonial architecture.',
+    'You can walk colorful streets, visit museums and see local art.',
+    'There is a lot of music, dance and delicious food.',
+    'You can visit the San Felipe castle and watch the sunset on the beach.',
+  ]},
+  { id:'alhambra', unit:'s2u12', name:'La Alhambra', emoji:'🕌', facts:[
+    'In Granada, a city in the south of Spain.',
+    'An old palace with gardens, fountains and very beautiful details.',
+    'It was built during the Muslim era in Spain.',
+    'You can walk through the patios, see the art on the walls and explore the gardens.',
+    'You can see the city of Granada from it. A magical and much-visited place.',
+  ]},
+  { id:'isla-sol', unit:'s2u12', name:'La Isla del Sol', emoji:'☀️', facts:[
+    'On Lake Titicaca, in Bolivia.',
+    'A special place with Inca history and natural landscapes.',
+    'There are no cars, and everything is very calm.',
+    'You can walk the trails, see old ruins and watch llamas and alpacas.',
+    'You can climb the mountains and see the lake from above.',
+  ]},
+  { id:'rapa-nui', unit:'s2u12', name:'Rapa Nui', emoji:'🗿', facts:[
+    'In the Pacific Ocean, and part of Chile.',
+    'Famous for its big stone statues called moáis.',
+    'The island has a lot of history and ancestral culture.',
+    'You can visit volcanoes and see natural landscapes. There are beaches, caves and bike paths.',
+    'A unique and mysterious island.',
+  ]},
+  { id:'peru', unit:'s2u12', name:'Perú', emoji:'🦙', facts:[
+    'In some countries the guinea pig (cuy) is a pet, but here it is served as a traditional food.',
+    'Here you can ride the highest trains and get beautiful views of the mountains.',
+  ]},
+];
 // Each level's material; useLevel() swaps it into DATA / GRAMMAR / CULTURE / VERBS_CONJ.
 const LEVEL_DATA = {
   3: { DATA, GRAMMAR, CULTURE, VERBS_CONJ },
-  2: { DATA:S2_DATA, GRAMMAR:S2_GRAMMAR, CULTURE:[], VERBS_CONJ:S2_VERBS },
+  2: { DATA:S2_DATA, GRAMMAR:S2_GRAMMAR, CULTURE:S2_CULTURE, VERBS_CONJ:S2_VERBS },
 };
 function useLevel(n){
   const d = LEVEL_DATA[n] || LEVEL_DATA[3];
@@ -2573,7 +2637,7 @@ function renderTop(){
     t.innerHTML=`
       <button class="backbtn" id="back">← ${inQuiz||inTopic ? 'Culture' : unitLabel()}</button>
       <div><h2>${inQuiz ? 'Match the facts' : inTopic ? 'Topic' : 'Culture'}</h2>
-      <div class="sub">${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${factCount()} facts</div></div>`;
+      <div class="sub">${cultureHere().length} topic${cultureHere().length===1?'':'s'} · ${factCount()} facts</div></div>`;
     t.querySelector("#back").onclick=()=>{
       if(inQuiz) state.fsession=null; else if(inTopic) state.ctopic=null; else state.view="unit";
       render();
@@ -2896,15 +2960,15 @@ function renderGrammarQuiz(c){
 }
 
 /* -------- Culture: topics, their facts, and matching -------- */
-const factCount = () => CULTURE.reduce((a,t)=>a+t.facts.length,0);
+const factCount = () => cultureHere().reduce((a,t)=>a+t.facts.length,0);
 
 function renderCultureHome(c){
-  if(CULTURE.length===0){
+  if(cultureHere().length===0){
     c.innerHTML=`<div class="empty"><div class="em">🌎</div>No culture topics yet.<br>Tell me the topic and its facts and I'll add them.</div>`;
     return;
   }
-  const canMatch = CULTURE.length >= 2;
-  let h=`<div class="hub">${CULTURE.map(t=>`
+  const canMatch = cultureHere().length >= 2;
+  let h=`<div class="hub">${cultureHere().map(t=>`
     <div class="hubcard bigcard" data-topic="${esc(t.id)}">
       <span class="go">→</span><span class="ic big">${t.emoji||'🌎'}</span>
       <h3>${esc(t.name)}</h3><div class="meta">${t.facts.length} fact${t.facts.length===1?'':'s'}</div>
@@ -2919,7 +2983,7 @@ function renderCultureHome(c){
 }
 
 function renderCultureTopic(c){
-  const t=CULTURE.find(x=>x.id===state.ctopic);
+  const t=cultureHere().find(x=>x.id===state.ctopic);
   if(!t){ state.ctopic=null; return render(); }
   c.innerHTML=`<h2 class="ptitle">${t.emoji||'🌎'} ${esc(t.name)}</h2>
     <p class="psub">Tap a fact to hide it, and see how many you can still say from memory.</p>
@@ -2934,12 +2998,12 @@ function renderCultureTopic(c){
 }
 
 function startFactQuiz(){
-  const all=CULTURE.flatMap(t=>t.facts.map(f=>({ fact:f, topic:t.id })));
+  const all=cultureHere().flatMap(t=>t.facts.map(f=>({ fact:f, topic:t.id })));
   state.fsession={ queue:shuffle(all), i:0, correct:0, wrong:[], result:null, curWrong:false };
 }
 function renderFactQuiz(c){
   const s=state.fsession;
-  const nameOf=id=>{ const t=CULTURE.find(x=>x.id===id); return t?t.name:id; };
+  const nameOf=id=>{ const t=cultureHere().find(x=>x.id===id); return t?t.name:id; };
   if(s.i>=s.queue.length){
     const pct=s.queue.length?Math.round(s.correct/s.queue.length*100):0;
     let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
@@ -2972,7 +3036,7 @@ function renderFactQuiz(c){
         <span class="corr">That one belongs to <b>${esc(nameOf(it.topic))}</b></span></div>
       <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
   }else{
-    h+=`<div class="dirlist">${CULTURE.map(t=>
+    h+=`<div class="dirlist">${cultureHere().map(t=>
       `<button class="dircard" data-pick="${esc(t.id)}"><span class="di">${t.emoji||'🌎'}</span>
         <div class="dtx"><div class="dt">${esc(t.name)}</div></div><span class="go">→</span></button>`).join('')}</div>`;
   }
@@ -2996,8 +3060,8 @@ function renderUnitHome(c){
     {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
     {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().map(g=>g.name).join(' · ') || 'Nothing added yet'), cls:''},
-    {key:'culture', ic:'🌎', title:'Culture', desc: CULTURE.length
-      ? `${CULTURE.length} topic${CULTURE.length===1?'':'s'} · ${CULTURE.reduce((a,t)=>a+t.facts.length,0)} facts`
+    {key:'culture', ic:'🌎', title:'Culture', desc: cultureHere().length
+      ? `${cultureHere().length} topic${cultureHere().length===1?'':'s'} · ${cultureHere().reduce((a,t)=>a+t.facts.length,0)} facts`
       : 'Nothing added yet', cls:''},
   ];
   c.innerHTML=`<div class="hub unit-home">${cards.map(card=>`
