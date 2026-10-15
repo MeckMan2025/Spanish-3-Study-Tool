@@ -2485,58 +2485,116 @@ const S2_GRAMMAR = [
 // Spanish 2 culture: the Viernes readings from Unit 1–2, plus the review sheet.
 // Every topic has several facts, so the matching quiz has something to tell apart.
 const S2_CULTURE = [
-  { id:'guanajuato', unit:'s2u12', name:'Guanajuato', emoji:'🇲🇽', facts:[
+  { id:'guanajuato', unit:'s2u12', group:'Lugares', name:'Guanajuato', emoji:'🇲🇽', facts:[
     'A city in the center of Mexico.',
     'A very colorful city with small streets and underground tunnels.',
     'It has a lot of history connected to Mexican independence.',
     'You can visit museums, statues and theaters.',
     'It has art, music and film festivals: an artistic and very special city.',
   ]},
-  { id:'salto-angel', unit:'s2u12', name:'El Salto Ángel', emoji:'💧', facts:[
+  { id:'salto-angel', unit:'s2u12', group:'Lugares', name:'El Salto Ángel', emoji:'💧', facts:[
     'It is in Venezuela, in Canaima National Park.',
     'The tallest waterfall in the world.',
     'The water falls from a very tall mountain in the jungle.',
     'You can see it by boat or by plane.',
     'You can explore nature and see exotic animals there.',
   ]},
-  { id:'toledo', unit:'s2u12', name:'Toledo', emoji:'⚔️', facts:[
+  { id:'toledo', unit:'s2u12', group:'Lugares', name:'Toledo', emoji:'⚔️', facts:[
     'In the center of Spain, near Madrid.',
     'An old city with Christian, Jewish and Muslim history.',
     'You can walk its stone streets, visit churches and see art by El Greco.',
     'It has castles, museums, and many shops with swords and typical sweets. It is known for impressive swords.',
     'From the high part of the city you can see the whole valley.',
   ]},
-  { id:'cartagena', unit:'s2u12', name:'Cartagena', emoji:'🏰', facts:[
+  { id:'cartagena', unit:'s2u12', group:'Lugares', name:'Cartagena', emoji:'🏰', facts:[
     'On the coast of Colombia, in the north of the country.',
     'Famous for its walled city and colonial architecture.',
     'You can walk colorful streets, visit museums and see local art.',
     'There is a lot of music, dance and delicious food.',
     'You can visit the San Felipe castle and watch the sunset on the beach.',
   ]},
-  { id:'alhambra', unit:'s2u12', name:'La Alhambra', emoji:'🕌', facts:[
+  { id:'alhambra', unit:'s2u12', group:'Lugares', name:'La Alhambra', emoji:'🕌', facts:[
     'In Granada, a city in the south of Spain.',
     'An old palace with gardens, fountains and very beautiful details.',
     'It was built during the Muslim era in Spain.',
     'You can walk through the patios, see the art on the walls and explore the gardens.',
     'You can see the city of Granada from it. A magical and much-visited place.',
   ]},
-  { id:'isla-sol', unit:'s2u12', name:'La Isla del Sol', emoji:'☀️', facts:[
+  { id:'isla-sol', unit:'s2u12', group:'Lugares', name:'La Isla del Sol', emoji:'☀️', facts:[
     'On Lake Titicaca, in Bolivia.',
     'A special place with Inca history and natural landscapes.',
     'There are no cars, and everything is very calm.',
     'You can walk the trails, see old ruins and watch llamas and alpacas.',
     'You can climb the mountains and see the lake from above.',
   ]},
-  { id:'rapa-nui', unit:'s2u12', name:'Rapa Nui', emoji:'🗿', facts:[
+  { id:'rapa-nui', unit:'s2u12', group:'Lugares', name:'Rapa Nui', emoji:'🗿', facts:[
     'In the Pacific Ocean, and part of Chile.',
     'Famous for its big stone statues called moáis.',
     'The island has a lot of history and ancestral culture.',
     'You can visit volcanoes and see natural landscapes. There are beaches, caves and bike paths.',
     'A unique and mysterious island.',
   ]},
-  { id:'peru', unit:'s2u12', name:'Perú', emoji:'🦙', facts:[
-    'In some countries the guinea pig (cuy) is a pet, but here it is served as a traditional food.',
-    'Here you can ride the highest trains and get beautiful views of the mountains.',
+  { id:'peru', unit:'s2u12', group:'Lugares', name:'Perú', emoji:'🚂', facts:[
+    'This is where you can ride the highest trains and get beautiful views of the mountains.',
+    'The country where el cuy (guinea pig) is served as a traditional food.',
+  ]},
+  { id:'andes', unit:'s2u12', group:'Lugares', name:'Los Andes', emoji:'🏔️', facts:[
+    'A well-known mountain range in South America.',
+    'The longest mountain range in the world, running down the west side of South America.',
+    'The highest trains in Peru climb through these mountains.',
+  ]},
+
+  // sayings (dichos)
+  { id:'pelos-lengua', unit:'s2u12', group:'Dichos', name:'No tener pelos en la lengua', emoji:'👅', facts:[
+    'When a person says something in a direct way.',
+    'Literally: "to not have hairs on your tongue."',
+    'Said about someone who speaks frankly and doesn\'t hold back.',
+  ]},
+  { id:'hecho-polvo', unit:'s2u12', group:'Dichos', name:'Estar hecho/a polvo', emoji:'😩', facts:[
+    'A way to say you are exhausted: you are dust.',
+    'Literally: "to be made into dust."',
+    'What you might say after a long, tiring day.',
+  ]},
+  { id:'humor-perros', unit:'s2u12', group:'Dichos', name:'Tener un humor de perros', emoji:'🐶', facts:[
+    'A common phrase to say you are in a bad mood.',
+    'Literally: "to have a dog\'s mood."',
+    'What you say about someone who is grumpy and irritable.',
+  ]},
+  { id:'lena-fuego', unit:'s2u12', group:'Dichos', name:'Echar leña al fuego', emoji:'🔥', facts:[
+    'To stir the pot, to add fuel to the fire.',
+    'Literally: "to throw firewood on the fire."',
+    'What someone does when they make an argument or a problem worse.',
+  ]},
+
+  // traditions, food and legends
+  { id:'cuy', unit:'s2u12', group:'Tradiciones y Leyendas', name:'El cuy', emoji:'🐹', facts:[
+    'In some countries this animal is a pet, but in Peru it is served as a traditional food.',
+    'The Spanish name for a guinea pig.',
+    'In Peru it is often eaten for special occasions and celebrations.',
+  ]},
+  { id:'empanada', unit:'s2u12', group:'Tradiciones y Leyendas', name:'La empanada', emoji:'🥟', facts:[
+    'Food made in many Latin American countries. It is similar to a dumpling.',
+    'A pastry turnover filled with meat, cheese or vegetables.',
+    'It can be baked or fried, and every country has its own version.',
+  ]},
+  { id:'llorona', unit:'s2u12', group:'Tradiciones y Leyendas', name:'La llorona', emoji:'😢', facts:[
+    'A legend about a woman who is crying out for her kids.',
+    'Adults use this story to teach kids to be careful.',
+    'Her name means "the weeping woman."',
+  ]},
+  { id:'herencia', unit:'s2u12', group:'Tradiciones y Leyendas', name:'La herencia', emoji:'👪', facts:[
+    'The culture and history that a person receives from their family or community.',
+    'In English: heritage.',
+    'Traditions, food and language passed down in your family are part of it.',
+  ]},
+  { id:'leyenda', unit:'s2u12', group:'Tradiciones y Leyendas', name:'La leyenda', emoji:'📜', facts:[
+    'A story that teaches a lesson and is passed down from generation to generation.',
+    'In English: a legend. La llorona is one.',
+  ]},
+  { id:'axolote', unit:'s2u12', group:'Tradiciones y Leyendas', name:'El axolote', emoji:'🦎', facts:[
+    'An animal important to the scientific community, with the ability to regenerate parts of its body.',
+    'A salamander from the lakes near Mexico City.',
+    'It can grow back legs, its tail, and even parts of its heart.',
   ]},
 ];
 // Each level's material; useLevel() swaps it into DATA / GRAMMAR / CULTURE / VERBS_CONJ.
@@ -2962,17 +3020,21 @@ function renderGrammarQuiz(c){
 /* -------- Culture: topics, their facts, and matching -------- */
 const factCount = () => cultureHere().reduce((a,t)=>a+t.facts.length,0);
 
+const GROUP_ASK = { 'Lugares':'place', 'Dichos':'saying', 'Tradiciones y Leyendas':'tradition or legend' };
 function renderCultureHome(c){
   if(cultureHere().length===0){
     c.innerHTML=`<div class="empty"><div class="em">🌎</div>No culture topics yet.<br>Tell me the topic and its facts and I'll add them.</div>`;
     return;
   }
   const canMatch = cultureHere().length >= 2;
-  let h=`<div class="hub">${cultureHere().map(t=>`
+  // topics with a group: one heading per group, in the order they're listed
+  const groups = [...new Set(cultureHere().map(t=>t.group||''))];
+  const card = t=>`
     <div class="hubcard bigcard" data-topic="${esc(t.id)}">
       <span class="go">→</span><span class="ic big">${t.emoji||'🌎'}</span>
       <h3>${esc(t.name)}</h3><div class="meta">${t.facts.length} fact${t.facts.length===1?'':'s'}</div>
-    </div>`).join('')}</div>
+    </div>`;
+  let h=groups.map(g=>`${g?`<div class="sectionhdr">${esc(g)}</div>`:''}<div class="hub">${cultureHere().filter(t=>(t.group||'')===g).map(card).join('')}</div>`).join('')+`
     <button class="practicebtn" id="startMatch" ${canMatch?'':'disabled'}>🔀 Match the facts</button>
     <p class="psub" style="text-align:center;margin-top:-6px">${canMatch
       ? 'A fact comes up — say which topic it belongs to.'
@@ -2998,7 +3060,7 @@ function renderCultureTopic(c){
 }
 
 function startFactQuiz(){
-  const all=cultureHere().flatMap(t=>t.facts.map(f=>({ fact:f, topic:t.id })));
+  const all=cultureHere().flatMap(t=>t.facts.map(f=>({ fact:f, topic:t.id, group:t.group||'' })));
   state.fsession={ queue:shuffle(all), i:0, correct:0, wrong:[], result:null, curWrong:false };
 }
 function renderFactQuiz(c){
@@ -3029,14 +3091,15 @@ function renderFactQuiz(c){
     <div class="prog"><div class="progtxt">${s.i+1} / ${s.queue.length}</div>
       <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✓ ${s.correct}</div></div>
     <div class="prompt" style="font-size:19px;line-height:1.35">${esc(it.fact)}</div>
-    <div class="askside">Which topic is this?</div>`;
+    <div class="askside">Which ${GROUP_ASK[it.group] || 'topic'} is this?</div>`;
   if(s.result){
     const right=s.result==='right';
     h+=`<div class="feedback ${right?'good':'bad'}">${right?'✓ ¡Correcto!':'✕ Not quite'}
         <span class="corr">That one belongs to <b>${esc(nameOf(it.topic))}</b></span></div>
       <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
   }else{
-    h+=`<div class="dirlist">${cultureHere().map(t=>
+    // only topics from the fact's own group, so a place fact never offers a saying
+    h+=`<div class="dirlist">${cultureHere().filter(t=>(t.group||'')===(it.group||'')).map(t=>
       `<button class="dircard" data-pick="${esc(t.id)}"><span class="di">${t.emoji||'🌎'}</span>
         <div class="dtx"><div class="dt">${esc(t.name)}</div></div><span class="go">→</span></button>`).join('')}</div>`;
   }
