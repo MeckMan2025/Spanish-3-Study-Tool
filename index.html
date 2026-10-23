@@ -2885,7 +2885,7 @@ function renderLevels(){
   document.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>switchLevel(+b.dataset.level));
   const ready = READY.includes(lv), soon = document.getElementById("soon");
   soon.hidden = ready; document.getElementById("wrap").hidden = !ready; document.getElementById("soonCredit").hidden = ready;
-  document.title = `Spanish ${lv} Study Tool`;
+  document.title = `Spanish Study Tool`;
   if(!ready) soon.innerHTML = `<div class="card"><div class="big">🚧</div><h2>Spanish ${lv}: coming soon</h2>
     <p>This level is still being built. Spanish 2 and 3 are ready to study now.</p><button class="pill" data-level="2">Go to Spanish 2</button> <button class="pill" data-level="3">Go to Spanish 3</button></div>`;
   soon.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>switchLevel(+b.dataset.level));
@@ -2904,7 +2904,7 @@ function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderConte
 
 function renderSidebar(){
   const sb=document.getElementById("sidebar");
-  let h=`<div class="brand"><span class="flag">🇪🇸</span><div><h1>Spanish ${state.level||3}</h1><small>Study Tool</small></div></div>`;
+  let h=`<div class="brand"><span class="flag">🇪🇸</span><div><h1>Spanish Study Tool</h1><small>Spanish ${state.level||3}</small></div></div>`;
   h+=`<div class="side-label">Units</div>`;
   DATA.units.forEach((u,i)=>{
     const n=u.sets.reduce((a,s)=>a+s.words.length,0) || (u.map?MAP_COUNTRIES.length:0);
