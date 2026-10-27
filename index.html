@@ -258,13 +258,14 @@
   .mappick.muted{background:#f6f4fb; color:var(--muted); font-weight:600; font-size:13px}
   .maplist{display:flex; flex-direction:column; max-height:560px; overflow:auto; border:1px solid var(--line); border-radius:14px}
   .maprow{display:flex; align-items:center; gap:10px; border:none; background:#fff; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer; font:inherit; color:var(--ink)}
+  .maprow .cap small{display:block; font-size:11px; color:var(--muted); font-weight:600}
   .maprow:last-child{border-bottom:none}
   .maprow:hover{background:#faf7fd}
   .maprow.on{background:linear-gradient(120deg,#fce4ee,#eee6fb)}
   .maprow .ltr{width:22px; height:22px; border-radius:50%; background:var(--accent2); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:0 0 auto}
   .maprow.on .ltr{background:var(--accent-d)}
   .maprow .nm{flex:1; min-width:0; font-size:14px} .maprow .nm small{display:block; color:var(--muted); font-size:11.5px; font-weight:600}
-  .maprow .cap{font-size:13px; color:var(--muted); font-weight:700; text-align:right; padding-left:8px}
+  .maprow .cap{font-size:13px; color:var(--muted); font-weight:700; text-align:right; padding-left:8px; flex:0 0 auto; max-width:48%}
   .mapstage .mapwrap{margin:6px auto 14px; max-width:600px}
   .prompt.small{font-size:26px}
   @media (max-width:820px){ .mapcard{flex-direction:column} .mapcard .mapwrap,.mapkey{flex-basis:auto; width:100%} .maplist{max-height:320px} .insets{flex-basis:120px} }
@@ -1399,13 +1400,13 @@ const MAP_DATA = {"panels":[{"id":"main","w":640,"h":772,"context":["M331.4 -110
 // A–U in the same order as the class worksheet
 const MAP_COUNTRIES = [
   {iso:'ESP', cc:'ES', panel:'spain',  es:'España',               en:'Spain',              cap:'Madrid'},
-  {iso:'MEX', cc:'MX', es:'México',               en:'Mexico',             cap:'Ciudad de México',    alt:['México','Mexico City','Mexico']},
+  {iso:'MEX', cc:'MX', es:'México',               en:'Mexico',             cap:'Ciudad de México',    alt:['México','Mexico City','Mexico','México DF','México D.F.','Mexico DF']},
   {iso:'GTM', cc:'GT', es:'Guatemala',            en:'Guatemala',          cap:'Ciudad de Guatemala', alt:['Guatemala','Guatemala City']},
   {iso:'HND', cc:'HN', es:'Honduras',             en:'Honduras',           cap:'Tegucigalpa'},
   {iso:'SLV', cc:'SV', es:'El Salvador',          en:'El Salvador',        cap:'San Salvador'},
   {iso:'NIC', cc:'NI', es:'Nicaragua',            en:'Nicaragua',          cap:'Managua'},
   {iso:'CRI', cc:'CR', es:'Costa Rica',           en:'Costa Rica',         cap:'San José'},
-  {iso:'PAN', cc:'PA', es:'Panamá',               en:'Panama',             cap:'Ciudad de Panamá',    alt:['Panamá','Panama City','Panama']},
+  {iso:'PAN', cc:'PA', es:'Panamá',               en:'Panama',             cap:'Ciudad de Panamá',    alt:['Panamá','Panama City','Panama','la Ciudad de Panamá']},
   {iso:'CUB', cc:'CU', es:'Cuba',                 en:'Cuba',               cap:'La Habana',           alt:['Habana','Havana']},
   {iso:'DOM', cc:'DO', es:'República Dominicana', en:'Dominican Republic', cap:'Santo Domingo'},
   {iso:'PRI', cc:'PR', es:'Puerto Rico',          en:'Puerto Rico',        cap:'San Juan'},
@@ -1418,16 +1419,32 @@ const MAP_COUNTRIES = [
   {iso:'PRY', cc:'PY', es:'Paraguay',             en:'Paraguay',           cap:'Asunción'},
   {iso:'ARG', cc:'AR', es:'Argentina',            en:'Argentina',          cap:'Buenos Aires'},
   {iso:'URY', cc:'UY', es:'Uruguay',              en:'Uruguay',            cap:'Montevideo'},
-  {iso:'GNQ', cc:'GQ', panel:'guinea', es:'Guinea Ecuatorial',    en:'Equatorial Guinea',  cap:'Malabo'},
+  {iso:'GNQ', cc:'GQ', panel:'guinea', es:'Guinea Ecuatorial',    en:'Equatorial Guinea',  cap:'Malabo',              alt:['Ciudad de la Paz','la Ciudad de la Paz'], note:'Malabo is the current capital; the class sheet says Ciudad de la Paz, the new capital being built'},
 ];
-MAP_COUNTRIES.forEach((c,i)=>{ c.letter=String.fromCharCode(65+i); c.panel=c.panel||'main'; });
+// Adjectives of nationality (the Nacionalidades sheet). -o/-a change for gender; -ense never does; español adds -a.
+const NATIONALITIES = { ESP:'español', MEX:'mexicano', GTM:'guatemalteco', HND:'hondureño', SLV:'salvadoreño', NIC:'nicaragüense',
+  CRI:'costarricense', PAN:'panameño', CUB:'cubano', DOM:'dominicano', PRI:'puertorriqueño', VEN:'venezolano', COL:'colombiano',
+  ECU:'ecuatoriano', PER:'peruano', BOL:'boliviano', CHL:'chileno', PRY:'paraguayo', ARG:'argentino', URY:'uruguayo', GNQ:'ecuatoguineano' };
+// adjective shown like the sheet: argentino/a, but costarricense stays the same for both
+const natDisplay = adj => /e$/.test(adj) ? adj : adj+'/a';
+// the nationality for a subject: gender m/f, plural true/false
+function nationality(adj, g, pl){
+  let w = adj;
+  if(/o$/.test(adj)) w = adj.slice(0,-1) + (g==='f' ? 'a' : 'o');
+  else if(!/e$/.test(adj) && g==='f') w = adj + 'a';          // español → española
+  if(pl) w += /[aeiou]$/.test(w) ? 's' : 'es';                 // vowel + s, consonant + es
+  return w;
+}
+MAP_COUNTRIES.forEach((c,i)=>{ c.letter=String.fromCharCode(65+i); c.panel=c.panel||'main'; c.adj=NATIONALITIES[c.iso]; });
 const mapCountry = iso => MAP_COUNTRIES.find(c=>c.iso===iso);
 const flagOf = cc => String.fromCodePoint(...[...cc].map(ch=>0x1F1E6+ch.charCodeAt(0)-65));
 // where the letter sits when the country is too small or thin to hold it (dx, dy from the centroid)
 const MAP_LABEL_OFFSET = { GTM:[-34,-14], HND:[6,-26], SLV:[-36,26], NIC:[28,8], CRI:[-30,20], PAN:[20,22], DOM:[0,26], PRI:[14,22], CHL:[-26,0], URY:[24,12] };
 const MAP_PANEL_NAME = { main:'', spain:'Europa', guinea:'África' };
 
-const MAP_UNIT = { id:'s2u4', name:'Unit 4 — Países Hispanohablantes', map:true, sets:[] };
+const MAP_UNIT = { id:'s2u4', name:'Unit 4 — Países Hispanohablantes', map:true, sets:[
+  { name:'Nacionalidades', words: MAP_COUNTRIES.map(c=>({ es: /e$/.test(c.adj) ? c.adj : c.adj+' (-a)', en:`from ${c.en}` })) },
+] };
 
 // The six ways round, plus everything mixed
 const MAP_MODES = [
@@ -1489,13 +1506,13 @@ function renderMapHome(c){
   let h=`<div class="sectionhdr">Study the map</div>
     <div class="mapcard">${mapSvg({letters:true, click:true, hl:state.mpick, names:'full'})}
       <div class="mapkey">
-        ${pick ? `<div class="mappick">${flagOf(pick.cc)} <b>${esc(pick.es)}</b> <span>${esc(pick.en)}</span><br>capital: <b>${esc(pick.cap)}</b>${pick.note?`<small>${esc(pick.note)}</small>`:''}</div>`
+        ${pick ? `<div class="mappick">${flagOf(pick.cc)} <b>${esc(pick.es)}</b> <span>${esc(pick.en)}</span><br>capital: <b>${esc(pick.cap)}</b> · nacionalidad: <b>${esc(natDisplay(pick.adj))}</b>${pick.note?`<small>${esc(pick.note)}</small>`:''}</div>`
                : `<div class="mappick muted">Tap a country or a letter to see its name and capital.</div>`}
         <div class="maplist">${MAP_COUNTRIES.map(k=>`
           <button class="maprow ${k.iso===state.mpick?'on':''}" data-row="${k.iso}">
             <span class="ltr">${k.letter}</span><span class="flg">${flagOf(k.cc)}</span>
             <span class="nm"><b>${esc(k.es)}</b><small>${esc(k.en)}</small></span>
-            <span class="cap">${esc(k.cap)}</span>
+            <span class="cap">${esc(k.cap)}<small>${esc(natDisplay(k.adj))}</small></span>
           </button>`).join('')}</div>
       </div>
     </div>
@@ -2689,7 +2706,96 @@ const ACCIDENT_ITEMS = [
   ['El vaso está ___ después de caerse al suelo.','roto'],
 ].map(([ask, answer])=>({ ask, hint:'a word from the Unit 10 list', answer, why:'From the Task #30.1 word bank.' }));
 
+// ---- Spanish 2 Unit 4: Apuntes "Ser and Adjective Agreement" + the Nacionalidades sheet ----
+const SER_FORMS = {yo:'soy',tu:'eres',el:'es',nos:'somos',vos:'sois',ellos:'son'};
+const SER_NOTE_ITEMS = [
+  { ask:'The verb ser means…', hint:'from the notes', answer:'to be', choices:[['to be','🆔'],['to have','🎒'],['to go','🚶']], why:'Ser = to be.' },
+  { ask:'Use ser to describe the ___ of people, places and things: physical, personality, or detailing.', hint:'fill the blank', answer:'characteristics',
+    choices:[['characteristics','✨'],['location','📍'],['feelings','😊']], why:'Ser describes characteristics: what someone or something is like.' },
+  { ask:'Use ser to describe the ___ of people, places and things: where you are from and your nationality.', hint:'fill the blank', answer:'origin',
+    choices:[['origin','🌎'],['location','📍'],['condition','🤒']], why:'Ser describes origin: where you are from.' },
+];
+const AGREE_NOTE_ITEMS = [
+  { ask:'Adjectives agree with a noun depending on whether it is ___ or ___.', hint:'from the notes', answer:'masculine or feminine',
+    choices:[['masculine or feminine','🚻'],['big or small','📏'],['new or old','🕰️']], why:'Gender: masculine or feminine.' },
+  { ask:'They also agree according to whether the noun is ___ or ___.', hint:'from the notes', answer:'singular or plural',
+    choices:[['singular or plural','🔢'],['near or far','📍'],['first or last','🥇']], why:'Number: singular or plural.' },
+  { ask:'To make an adjective plural after a vowel, add…', hint:'alto → ?', answer:'-s', choices:[['-s','🅰️'],['-es','🅱️']], why:'Vowel + s: alto → altos.' },
+  { ask:'To make an adjective plural after a consonant, add…', hint:'azul → ?', answer:'-es', choices:[['-es','🅱️'],['-s','🅰️']], why:'Consonant + es: azul → azules.' },
+  { ask:'¡OJO! When an adjective describes a group with both masculine and feminine nouns, use the…', hint:'Juan y María son…', answer:'masculine plural',
+    choices:[['masculine plural','👫'],['feminine plural','👭'],['masculine singular','🧍']], why:'Mixed group = masculine plural: Juan y María son altos.' },
+  { ask:'¡No te olvides! All adjectives must agree in ___ and ___ with the noun they describe.', hint:'from the notes', answer:'gender and number',
+    choices:[['gender and number','✅'],['tense and mood','⏳'],['size and color','🎨']], why:'Gender (mas/fem) and number (singular/plural).' },
+];
+// people and things, with the adjectives that make sense for each
+const AGREE_PEOPLE = [ // [phrase, gender, plural, mixed group?]
+  ['El chico','m',false],['La chica','f',false],['Los chicos','m',true],['Las chicas','f',true],
+  ['Mi hermano','m',false],['Mi hermana','f',false],['Mis hermanos','m',true],['Mis hermanas','f',true],
+  ['El profesor','m',false],['La profesora','f',false],['Los estudiantes','m',true],['Las estudiantes','f',true],
+  ['Juan','m',false],['María','f',false],['Juan y Pedro','m',true],['Ana y Marta','f',true],
+  ['Juan y María','m',true,true],['Mis padres','m',true,true],['Los niños y las niñas','m',true,true],['Carlos y sus hermanas','m',true,true],
+];
+const AGREE_THINGS = [
+  ['El libro','m',false],['La casa','f',false],['Los perros','m',true],['Las ciudades','f',true],
+  ['El carro','m',false],['La clase','f',false],['Los exámenes','m',true],['Las mochilas','f',true],
+];
+const PEOPLE_ADJS = [['alto','tall'],['bajo','short'],['simpático','nice'],['serio','serious'],['divertido','fun'],['rubio','blond'],['moreno','dark-haired'],
+  ['inteligente','smart'],['amable','kind'],['triste','sad'],['popular','popular'],['leal','loyal']];
+const THING_ADJS = [['bonito','pretty'],['pequeño','small'],['rojo','red'],['nuevo','new'],['viejo','old'],['grande','big'],['verde','green'],['interesante','interesting'],
+  ['azul','blue'],['fácil','easy'],['difícil','hard'],['gris','gray']];
+// make an adjective agree: -o/-a for gender; plural adds -s after a vowel, -es after a consonant
+function agree(adj, g, pl){
+  let w = /o$/.test(adj) ? adj.slice(0,-1) + (g==='f' ? 'a' : 'o') : adj;
+  if(pl) w += /[aeiouáéíóú]$/.test(w) ? 's' : 'es';
+  return w;
+}
+function agreeWhy(adj, g, pl, mixed){
+  const bits=[];
+  if(mixed) bits.push('A mixed group (masculine + feminine) uses the masculine plural.');
+  if(/o$/.test(adj)) bits.push(g==='f' ? '-o adjectives end in -a for a feminine noun.' : '-o adjectives keep -o for a masculine noun.');
+  else bits.push(`Adjectives ending in ${/[aeiouáéíóú]$/.test(adj)?'-e':'a consonant'} don't change for gender.`);
+  if(pl) bits.push(/[aeiouáéíóú]$/.test(adj) ? 'Plural: add -s after a vowel.' : 'Plural: add -es after a consonant.');
+  else bits.push('Singular: no ending added.');
+  return bits.join(' ');
+}
+function agreeItems(){
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  const mk = (nouns, adjs) => nouns.map(([phrase,g,pl,mixed])=>{ const [adj,en]=pick(adjs);
+    return { ask:`${phrase} ${pl?'son':'es'} ___ (${adj})`, hint:`${en} · make it agree`, answer:agree(adj,g,pl), why:agreeWhy(adj,g,pl,mixed) }; });
+  return [...mk(AGREE_PEOPLE, PEOPLE_ADJS), ...mk(AGREE_THINGS, THING_ADJS)];
+}
+// "Ella es de Bolivia. Ella es ___" — nationality that agrees with the subject
+const NAT_SUBJECTS = [ // [subject, gender, plural, form of ser]
+  ['Él','m',false,'es'],['Ella','f',false,'es'],['Ellos','m',true,'son'],['Ellas','f',true,'son'],
+  ['Juan','m',false,'es'],['María','f',false,'es'],['Mi amigo','m',false,'es'],['Mi amiga','f',false,'es'],
+  ['Mis amigos','m',true,'son'],['Mis amigas','f',true,'son'],['Nosotros','m',true,'somos'],['Nosotras','f',true,'somos'],
+  ['Juan y Ana','m',true,'son'],['Las chicas','f',true,'son'],['Los chicos','m',true,'son'],['La profesora','f',false,'es'],
+];
+function natWhy(adj, g, pl){
+  const bits=[];
+  if(/o$/.test(adj)) bits.push(g==='f' ? `${adj} → ${adj.slice(0,-1)}a for a feminine subject.` : `${adj} keeps -o for a masculine subject.`);
+  else if(/e$/.test(adj)) bits.push(`${adj} ends in -e, so it is the same for masculine and feminine.`);
+  else bits.push(g==='f' ? `${adj} adds -a for a feminine subject: ${adj}a.` : `${adj} ends in a consonant and stays the same for masculine.`);
+  if(pl) bits.push(/[aeiou]$/.test(nationality(adj,g,false)) ? 'Plural: add -s after a vowel.' : 'Plural: add -es after a consonant.');
+  return bits.join(' ');
+}
+function natItems(){
+  return MAP_COUNTRIES.map(c=>{ const [subj,g,pl,ser]=NAT_SUBJECTS[Math.floor(Math.random()*NAT_SUBJECTS.length)];
+    return { ask:`${subj} ${ser} de ${c.es}. ${subj} ${ser} ___`, hint:`${c.en} · nationality that agrees`, answer:nationality(c.adj,g,pl), why:natWhy(c.adj,g,pl) }; });
+}
+
 const S2_GRAMMAR = [
+  { id:'s2-ser', unit:'s2u4', name:'Ser', emoji:'🆔', blurb:'soy · eres · es · somos · sois · son — and what ser is for',
+    build(){ const conj = FORMS.flatMap(k=>shuffle(SUBJ_BY_FORM[k]).slice(0,3).map(p=>({ ask:`${p.es} · ser`, hint:p.en, answer:SER_FORMS[k],
+      why:'Ser: soy, eres, es, somos, sois, son.' })));
+      return [...shuffle(SER_NOTE_ITEMS), ...shuffle(conj)]; } },
+  { id:'s2-agree', unit:'s2u4', name:'Concordancia de Adjetivos', emoji:'🧲', blurb:'alto · alta · altos · altas — gender and number',
+    build(){ return [...shuffle(AGREE_NOTE_ITEMS), ...shuffle(agreeItems())]; } },
+  { id:'s2-nat', unit:'s2u4', name:'Nacionalidades', emoji:'🌎', blurb:'Perú → peruano/a · the 21 countries',
+    build(){ return shuffle(MAP_COUNTRIES.map(c=>({ ask:c.es, hint:`${c.en} · adjective of nationality (masculine form)`, answer:c.adj,
+      why: /e$/.test(c.adj) ? `${natDisplay(c.adj)} is the same for masculine and feminine.` : `${natDisplay(c.adj)}: -o for masculine, -a for feminine.` }))); } },
+  { id:'s2-de-donde', unit:'s2u4', name:'¿De dónde es?', emoji:'🛂', blurb:'Ella es de Bolivia → Ella es boliviana',
+    build(){ return shuffle(natItems()); } },
   { id:'s2-preguntas', unit:'s2u12', name:'Palabras Interrogativas', emoji:'❓', blurb:'qué · cuándo · dónde · cuánto · quién · cuál',
     build(){ return shuffle(QUESTION_ITEMS); } },
   { id:'s2-negativos', unit:'s2u12', name:'Negativos y Afirmativos', emoji:'➕', blurb:'alguien / nadie · algo / nada · también / tampoco',
@@ -2957,7 +3063,7 @@ function renderTop(){
     t.innerHTML=`
       <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : unitLabel()}</button>
       <div><h2>${inDrill ? esc(g.name) : 'Grammar'}</h2>
-      <div class="sub">${inDrill ? esc(g.blurb) : 'Gustar and possessives'}</div></div>`;
+      <div class="sub">${inDrill ? esc(g.blurb) : esc(grammarHere().map(x=>x.name).join(' · ') || 'Drills for this unit')}</div></div>`;
     t.querySelector("#back").onclick=()=>{ if(inDrill){ state.gsession=null; state.gtopic=null; } else state.view="unit"; render(); };
     return;
   }
