@@ -2819,6 +2819,25 @@ function natItems(){
     return { ask:`${subj} ${ser} de ${c.es}. ${subj} ${ser} ___`, hint:`${c.en} · nationality that agrees`, answer:nationality(c.adj,g,pl), why:natWhy(c.adj,g,pl) }; });
 }
 
+// Recognition, like the worksheet: a word bank of three nationalities, then
+// "Rodrigo es de Santiago. Es ___" for each, picked from that bank. The bank
+// is shown in the gender of the person, so María's choices end in -a.
+const NAT_NAMES = [['Rodrigo','m'],['María','f'],['Carlos','m'],['Sofía','f'],['Diego','m'],['Lucía','f'],['Mateo','m'],['Valentina','f'],
+  ['Javier','m'],['Isabel','f'],['Andrés','m'],['Camila','f'],['Pablo','m'],['Elena','f'],['Luis','m'],['Ana','f']];
+function natRecognitionItems(){
+  const countries=shuffle(MAP_COUNTRIES.slice()), names=shuffle(NAT_NAMES.slice()), out=[];
+  for(let i=0; i+3<=countries.length; i+=3){
+    const bank=countries.slice(i,i+3);
+    shuffle(bank.slice()).forEach((c,j)=>{
+      const [name,g]=names[(i+j)%names.length];
+      out.push({ ask:`${name} es de ${c.cap}. Es ___`, hint:'Word bank: '+bank.map(b=>b.adj).join(' · '),
+        answer:nationality(c.adj,g,false), choices:bank.map((b,k)=>[nationality(b.adj,g,false), ['1️⃣','2️⃣','3️⃣'][k]]),
+        why:`${c.cap} is in ${c.es}, so ${name} es ${nationality(c.adj,g,false)}.${g==='f' && /o$/.test(c.adj) ? ' '+name+' is feminine, so -o → -a.' : ''}` });
+    });
+  }
+  return out;
+}
+
 const S2_GRAMMAR = [
   { id:'s2-ser', unit:'s2u4', name:'Ser', emoji:'🆔', blurb:'soy · eres · es · somos · sois · son — and what ser is for',
     build(){ const conj = FORMS.flatMap(k=>shuffle(SUBJ_BY_FORM[k]).slice(0,3).map(p=>({ ask:`${p.es} · ser`, hint:p.en, answer:SER_FORMS[k],
@@ -2836,6 +2855,8 @@ const S2_GRAMMAR = [
   { id:'nat-cap-adj', unit:'s2u4-nat', name:'Capital → Adjetivo', emoji:'🏙️', blurb:'Lima → peruano/a',
     build(){ return shuffle(MAP_COUNTRIES.map(c=>({ ask:c.cap, hint:'the nationality of people from this capital (masculine form)', answer:c.adj,
       why:`${c.cap} is the capital of ${c.es}, so: ${natDisplay(c.adj)}.` }))); } },
+  { id:'nat-recognition', unit:'s2u4-nat', name:'Recognition', emoji:'🔎', blurb:'argentino · boliviano · chileno → Rodrigo es de Santiago. Es ___',
+    build(){ return natRecognitionItems(); } },
   { id:'nat-de-donde', unit:'s2u4-nat', name:'¿De dónde es?', emoji:'🛂', blurb:'Ella es de Bolivia → Ella es boliviana',
     build(){ return shuffle(natItems()); } },
   { id:'nat-mix', unit:'s2u4-nat', name:'Mix everything', emoji:'🔀', blurb:'all four ways round, shuffled', mix:true,
