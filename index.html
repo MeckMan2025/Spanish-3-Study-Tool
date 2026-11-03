@@ -1961,6 +1961,14 @@ const S2_DATA = {
           {es:"de niño (-a)", en:"as a child"},
           {es:"de pequeño (-a)", en:"as a child"},
         ]},
+        { name:"Indicators of Imperfect", words:[
+          {es:"a veces", en:"sometimes"},
+          {es:"cada día (mes, verano)", en:"each day (month, summer)"},
+          {es:"siempre", en:"always"},
+          {es:"frecuentemente", en:"frequently"},
+          {es:"por un rato", en:"for a while"},
+          {es:"todo el tiempo", en:"all the time"},
+        ]},
       ]
     },
     {
@@ -2613,8 +2621,36 @@ const PRET_IRR = {
   venir:['vine','viniste','vino','vinimos','vinisteis','vinieron'],
 };
 const PRET_EN = {ser:'to be', ir:'to go', ver:'to see', dar:'to give', hacer:'to do/make', decir:'to say/tell', poner:'to put', traer:'to bring', venir:'to come'};
-const conjDrill = (verbs, formsOf, enOf, why, n=40) => shuffle(verbs.flatMap(v=>{ const f=formsOf(v);
-  return FORMS.map(k=>{ const p=pickSubj(k); return { ask:`${p.es} · ${v} (pretérito)`, hint:enOf(v), answer:f[k], why }; }); })).slice(0,n);
+const conjDrill = (verbs, formsOf, enOf, why, n=40, tense='pretérito') => shuffle(verbs.flatMap(v=>{ const f=formsOf(v);
+  return FORMS.map(k=>{ const p=pickSubj(k); return { ask:`${p.es} · ${v} (${tense})`, hint:enOf(v), answer:f[k], why }; }); })).slice(0,n);
+
+// Unit 5 — the imperfect: what someone used to do, what things were like, how
+// things used to be. -ar: aba, abas, aba, ábamos, abais, aban.
+// -er/-ir: ía, ías, ía, íamos, íais, ían. No stem changes in the imperfect.
+function imperf(inf){
+  const refl = inf.endsWith('se'), b = refl ? inf.slice(0,-2) : inf, stem = b.slice(0,-2), end = b.slice(-2);
+  const E = end==='ar' ? ['aba','abas','aba','ábamos','abais','aban'] : ['ía','ías','ía','íamos','íais','ían'];
+  return _withPron(refl, Object.fromEntries(FORMS.map((k,i)=>[k, stem+E[i]])));
+}
+const IMPF_AR = [['hablar','to speak'],['trabajar','to work'],['esquiar','to ski'],['montar','to ride'],['estudiar','to study'],['nadar','to swim'],
+  ['pagar','to pay'],['jugar','to play'],['abrazarse','to hug each other'],['besar','to kiss'],['coleccionar','to collect'],['felicitar','to congratulate'],
+  ['llorar','to cry'],['molestar','to bother'],['pelearse','to fight'],['portarse','to behave'],['saltar','to jump'],['llevarse','to get along']];
+const IMPF_ERIR = [['comer','to eat'],['vivir','to live'],['correr','to run'],['escribir','to write'],['abrir','to open'],['soler','to usually (do)'],
+  ['obedecer','to obey'],['ofrecer','to offer'],['permitir','to permit'],['divertirse','to have fun'],['mentir','to lie'],['tener','to have'],
+  ['hacer','to do/make'],['leer','to read'],['beber','to drink'],['querer','to want']];
+const IMPF_EN = Object.fromEntries([...IMPF_AR, ...IMPF_ERIR]);
+const IMPF_SENTENCES = [
+  fill('Cada invierno mi familia y yo ___ (esquiar) en las montañas.','esquiábamos','Nosotros, -ar: -ábamos, with the accent on the first a.'),
+  fill('Cuando era niña, yo ___ (montar) a caballo todos los fines de semana.','montaba','Yo, -ar: -aba. "Cuando era niña" sets it in the past, as a habit.'),
+  fill('Generalmente ella ___ (estudiar) en la biblioteca en la universidad.','estudiaba','Ella, -ar: -aba — the same as yo.'),
+  fill('Guille y Rosa ___ (nadar) en la piscina todo el tiempo.','nadaban','Ellos, -ar: -aban. "Todo el tiempo" signals the imperfect.'),
+  fill('Mi padre siempre ___ (pagar) en los restaurantes.','pagaba','Él, -ar: -aba. "Siempre" signals the imperfect.'),
+  fill('A veces nosotros ___ (comer) en la casa de nuestros abuelos.','comíamos','Nosotros, -er: -íamos.'),
+  fill('Cada día yo ___ (correr) en el parque con mi novio.','corría','Yo, -er: -ía, with the accent on the í.'),
+  fill('Por un rato él ___ (escribir) artículos para el periódico San Juanista.','escribía','Él, -ir: -ía — -er and -ir share the endings.'),
+  fill('Cuando eras niña, ¿qué ___ (soler) hacer con tu familia los veranos?','solías','Tú, -er: -ías. Soler + infinitive = used to (do).'),
+  fill('A menudo yo ___ (abrir) la ventana para no tener tanto calor.','abría','Yo, -ir: -ía. "A menudo" signals the imperfect.'),
+];
 
 // Present perfect (Unit 7): haber + past participle.
 const HABER = {yo:'he',tu:'has',el:'ha',nos:'hemos',vos:'habéis',ellos:'han'};
@@ -2954,6 +2990,12 @@ const S2_GRAMMAR = [
     build(){ return shuffle([...Object.keys(PARTICIPLES), 'hablar','comer','vivir','creer','leer','oír','traer'].map(v=>({
       ask:v, hint:'past participle', answer:participle(v),
       why: PARTICIPLES[v] ? 'One of the irregulars from the song.' : /(aer|eer|oír)$/.test(v) ? 'Two vowels together → accent on the í: -ído.' : '-ar → -ado, -er/-ir → -ido.' }))); } },
+  { id:'s2-impf-ar', unit:'s2u5', name:'Imperfecto: -AR', emoji:'🕰️', blurb:'hablaba · hablabas · hablaba · hablábamos · hablabais · hablaban',
+    build(){ return conjDrill(IMPF_AR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.', 40, 'imperfecto'); } },
+  { id:'s2-impf-erir', unit:'s2u5', name:'Imperfecto: -ER / -IR', emoji:'⏳', blurb:'comía · vivía — the same endings for both',
+    build(){ return conjDrill(IMPF_ERIR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.', 40, 'imperfecto'); } },
+  { id:'s2-impf-practice', unit:'s2u5', name:'Más Práctica', emoji:'📝', blurb:'the worksheet sentences, -ar and -er/-ir mixed',
+    build(){ return shuffle([...IMPF_SENTENCES]); } },
   { id:'s2-pret-reg', unit:'s2u8', name:'Pretérito Regular', emoji:'⏮️', blurb:'-é -aste -ó · -í -iste -ió',
     build(){ return conjDrill(PRET_REG_VERBS, pretReg, v=>v, '-ar: é, aste, ó, amos, asteis, aron. -er/-ir: í, iste, ió, imos, isteis, ieron.'); } },
   { id:'s2-twins', unit:'s2u8', name:'Ser, Ir, Ver, Dar', emoji:'👯', blurb:'fui · vi · di — plus gustó and hubo',
