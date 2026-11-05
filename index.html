@@ -186,6 +186,14 @@
     font-family:inherit; color:var(--ink);
   }
   .answer input:focus{border-color:var(--purple)}
+  .mgrid{display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:10px; max-width:760px; margin:10px auto 0}
+  .mcol{display:flex; flex-direction:column; gap:8px}
+  .mcard{flex:1; text-align:left; font:inherit; font-size:15px; line-height:1.3; color:var(--ink); background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; transition:.15s}
+  .mcard.sel{border-color:var(--accent); background:#fdf0f6; font-weight:700}
+  .mcard.ok{border-color:var(--good); background:var(--good-bg); color:var(--good); cursor:default}
+  .mcard.no{border-color:var(--bad); background:var(--bad-bg); animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  @media (max-width:560px){ .mcard{font-size:13.5px; padding:10px} }
   .feedback{max-width:460px; margin:16px auto 0; border-radius:14px; padding:14px 16px; text-align:center; font-weight:700}
   .feedback.good{background:var(--good-bg); color:var(--good)}
   .feedback.bad{background:var(--bad-bg); color:var(--bad)}
@@ -3204,10 +3212,10 @@ function renderSidebar(){
   });
   h+=`<div class="side-foot">Tap a set inside the unit, then Review → Practice. Everything auto-saves.</div>`;
   sb.innerHTML=h;
-  sb.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.unit; state.view="unit"; state.section="All"; state.session=null; state.msession=null; state.mpick=null; render();});
+  sb.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.unit; state.view="unit"; state.matchS=null; state.section="All"; state.session=null; state.msession=null; state.mpick=null; render();});
   sb.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.toggle; state.expanded=!state.expanded; render();});
   sb.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{
-    state.view=b.dataset.view; state.session=null; state.msession=null; render();
+    state.view=b.dataset.view; state.session=null; state.msession=null; state.matchS=null; render();
   });
 }
 
@@ -3275,7 +3283,7 @@ function renderTop(){
     t.innerHTML=`
       <button class="backbtn" id="back">← ${unitLabel()}</button>
       <div><h2>Vocabulary</h2><div class="sub">Choose a set</div></div>`;
-    t.querySelector("#back").onclick=()=>{state.view="unit"; render();};
+    t.querySelector("#back").onclick=()=>{ if(state.matchS){ state.matchS=null; } else state.view="unit"; render();};
     return;
   }
   if(state.view==="conjugate"){
@@ -3288,7 +3296,7 @@ function renderTop(){
   t.innerHTML=`
     <button class="backbtn" id="back">← Vocab</button>
     <div><h2>${esc(state.week)}</h2><div class="sub">${allWords().length} words</div></div>`;
-  t.querySelector("#back").onclick=()=>{state.view="vocab"; state.pstep=null; state.session=null; render();};
+  t.querySelector("#back").onclick=()=>{ if(state.matchS){ state.matchS=null; render(); return; } state.view="vocab"; state.pstep=null; state.session=null; render();};
 }
 
 function renderContent(){
@@ -3296,6 +3304,7 @@ function renderContent(){
   if(state.view==="unit") return renderUnitHome(c);
   if(state.view==="map") return state.msession ? renderMapQuiz(c) : renderMapHome(c);
   if(state.view==="nat") return state.gsession ? renderGrammarQuiz(c) : renderNatHome(c);
+  if(state.matchS && (state.view==="vocab" || state.view==="section")) return renderMatch(c);
   if(state.view==="vocab") return renderVocabHome(c);
   if(state.view==="verbs") return state.tsession ? renderTypeQuiz(c) : renderVerbHome(c);
   if(state.view==="grammar") return state.gsession ? renderGrammarQuiz(c) : renderGrammarHome(c);
@@ -3335,8 +3344,10 @@ function renderWordList(c){
     c.innerHTML=`<div class="empty"><div class="em">📭</div>No words in <b>${esc(state.week)}</b> yet.<br>Tell me which words go here and I'll add them.</div>`;
     return;
   }
-  c.innerHTML=`<button class="btn practicebtn" id="startPractice">✍️ Practice</button>${groupedWords(false)}`;
+  const nMatch=matchable(words).length;
+  c.innerHTML=`<button class="btn practicebtn" id="startPractice">✍️ Practice</button>${nMatch>=2?`<button class="btn practicebtn" id="startMatch" style="margin-top:-4px">🔀 Matching</button>`:''}${groupedWords(false)}`;
   c.querySelector("#startPractice").onclick=()=>{ ensureSelectedObj(); state.pstep="exclude"; render(); };
+  if(nMatch>=2) c.querySelector("#startMatch").onclick=()=>{ startMatch(words); render(); };
 }
 
 /* -------- Step 1: choose what to leave out -------- */
@@ -3462,6 +3473,143 @@ function renderQuiz(c){
   }
 }
 
+/* -------- Matching: English word ↔ a description in Spanish -------- */
+// A unit gets a Matching box once it has descriptions here, keyed by the
+// word's `es`. Words that mean the same thing share a `syn` so they never land
+// on the same board, where either answer would be right.
+const DEFS = {
+  s2u5: {
+    "había":"Se usa para decir que algo existía en el pasado.",
+    "abrazar(se)":"Poner los brazos alrededor de otra persona con cariño.",
+    "besar(se)":"Tocar a alguien con los labios para mostrar amor.",
+    "coleccionar":"Juntar muchas cosas del mismo tipo, como monedas o sellos.",
+    "divertirse (e-ie)":"Pasarlo muy bien y reírse mucho.",
+    "felicitar":"Decirle a alguien «¡Bien hecho!» o «¡Feliz cumpleaños!».",
+    "llevarse bien/mal":"Tener una relación buena o mala con otra persona.",
+    "llorar":"Lo que haces cuando estás muy triste: salen lágrimas de los ojos.",
+    "mentir (e-ie)":"No decir la verdad.",
+    "molestar":"Hacer algo que irrita o enoja a otra persona.",
+    "obedecer (c-zc)":"Hacer lo que dicen los padres o los maestros.",
+    "ofrecer (c-zc)":"Preguntar «¿Quieres esto?» para darle algo a alguien.",
+    "pelearse":"Discutir o pegarse con otra persona.",
+    "permitir":"Decir que sí, que alguien puede hacer algo.",
+    "portarse bien/mal":"Actuar de una manera buena o mala, como un niño en clase.",
+    "reunirse (u-ú)":"Juntarse con otras personas en un lugar.",
+    "saltar (a la cuerda)":"Subir del suelo con los pies muchas veces, a veces con una cuerda.",
+    "la cebra":"Animal africano blanco y negro, con rayas.",
+    "el conejo":"Animal pequeño de orejas largas que come zanahorias.",
+    "el elefante":"Animal muy grande y gris, con una trompa larga.",
+    "el gato":"Mascota pequeña que dice «miau».",
+    "el león":"El rey de la selva; el macho tiene una melena grande.",
+    "el perro":"Mascota que dice «guau»: el mejor amigo del hombre.",
+    "el pez (los peces)":"Animal que vive en el agua y nada.",
+    "el pingüino":"Pájaro blanco y negro que no vuela y vive donde hace mucho frío.",
+    "la serpiente":"Animal largo, sin patas, que se arrastra por el suelo.",
+    "la tortuga":"Animal muy lento que lleva su casa en la espalda.",
+    "el bebé / la bebé":"Una persona muy pequeña que acaba de nacer.",
+    "los parientes":"Las personas de tu familia, como los tíos y los primos.",
+    "todo el mundo":"Todas las personas.",
+    "el vecino / la vecina":"Una persona que vive en la casa de al lado.",
+    "los bloques":"Juguetes de madera o plástico para construir torres.",
+    "la cuerda":"Algo largo y delgado que se usa para saltar.",
+    "el dinosaurio":"Animal enorme que vivía hace millones de años.",
+    "la muñeca":"Juguete con forma de niña o de mujer.",
+    "el muñeco":"Juguete con forma de hombre o de superhéroe.",
+    "el oso de peluche":"Juguete suave con forma de oso para abrazar en la cama.",
+    "el tren eléctrico":"Juguete que corre sobre rieles con electricidad.",
+    "el triciclo":"Bicicleta para niños pequeños, con tres ruedas.",
+    "bien educado (-a)":"Un niño con buenos modales que dice «por favor» y «gracias».",
+    "consentido (-a)":"Un niño que recibe todo lo que quiere.",
+    "desobediente":"Alguien que no hace lo que le dicen.",
+    "generoso (-a)":"Alguien que comparte sus cosas con los demás.",
+    "obediente":"Alguien que siempre hace lo que le dicen.",
+    "tímido (-a)":"Alguien a quien no le gusta hablar con personas nuevas.",
+    "travieso (-a)":"Un niño que hace bromas y causa pequeños problemas.",
+    "la colección (las colecciones)":"Un grupo de muchas cosas del mismo tipo que alguien junta.",
+    "el desfile":"Personas, bandas y carrozas que pasan por la calle en una fiesta.",
+    "el día festivo":"Un día especial sin escuela ni trabajo.",
+    "los fuegos artificiales":"Luces de colores que explotan en el cielo el 4 de julio.",
+    "la guardería infantil":"Lugar donde cuidan a los niños pequeños mientras los padres trabajan.",
+    "la moneda":"Dinero pequeño y redondo de metal.",
+    "el mundo":"La Tierra con todos sus países.",
+    "el patio de recreo":"Lugar afuera de la escuela donde los niños juegan.",
+    "la verdad":"Lo contrario de una mentira.",
+    "todos los días":{d:"Cada día, sin excepción.", syn:"daily"},
+    "por lo general":{d:"Normalmente; en la mayoría de los casos.", syn:"general"},
+    "generalmente":{d:"Normalmente; en la mayoría de los casos.", syn:"general"},
+    "muchas veces":{d:"Un gran número de veces.", syn:"often"},
+    "a menudo":{d:"Con frecuencia.", syn:"often"},
+    "de vez en cuando":{d:"No muy a menudo; solo de tanto en tanto.", syn:"sometimes"},
+    "de niño (-a)":{d:"Cuando eras pequeño, hace muchos años.", syn:"child"},
+    "de pequeño (-a)":{d:"Cuando eras pequeño, hace muchos años.", syn:"child"},
+    "a veces":{d:"No siempre, solo en algunas ocasiones.", syn:"sometimes"},
+    "cada día (mes, verano)":{d:"Todos los días (o meses, o veranos), uno por uno.", syn:"daily"},
+    "siempre":{d:"En todo momento; nunca al revés.", syn:"always"},
+    "frecuentemente":{d:"Pasa mucho; con frecuencia.", syn:"often"},
+    "por un rato":{d:"Durante un tiempo corto.", syn:"while"},
+    "todo el tiempo":{d:"Sin parar, en todo momento.", syn:"always"},
+  },
+};
+const defOf = w => { const d=(DEFS[unit().id]||{})[w.es]; return d==null ? null : typeof d==='string' ? {d, syn:null} : d; };
+const matchable = words => words.filter(w=>defOf(w));
+const BOARD = 5;
+// Shuffle, then deal boards of five, never two synonyms on one board.
+function startMatch(words){
+  let left=shuffle(matchable(words)); const boards=[];
+  while(left.length){
+    const b=[], syns=new Set(), rest=[];
+    left.forEach(w=>{ const sy=defOf(w).syn;
+      if(b.length<BOARD && !(sy && syns.has(sy))){ b.push(w); if(sy) syns.add(sy); } else rest.push(w); });
+    boards.push(b); left=rest;
+  }
+  state.matchS={ boards, bi:0, order:null, pick:null, done:{}, bad:null, misses:0, missed:[], total:boards.reduce((a,b)=>a+b.length,0), back:state.view };
+  dealBoard();
+}
+function dealBoard(){ const s=state.matchS; s.order=shuffle(s.boards[s.bi].map((_,i)=>i)); s.pick=null; s.done={}; s.bad=null; }
+function renderMatch(c){
+  const s=state.matchS;
+  if(s.bi>=s.boards.length){
+    const right=s.total-s.missed.length, pct=s.total?Math.round(right/s.total*100):0;
+    let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
+      <div class="lbl">${right} of ${s.total} matched on the first try</div>`;
+    if(s.missed.length){
+      h+=`<div class="missed"><div class="sectionhdr">The ones that tripped you up</div>`;
+      s.missed.forEach(w=>{ h+=`<div class="m"><span>${esc(w.en)}</span><span>${esc(defOf(w).d)}</span></div>`; });
+      h+=`</div>`;
+    }
+    h+=`<div class="fbrow">
+        ${s.missed.length?`<button class="pill" id="retry">🔁 Match the ${s.missed.length} tricky ones</button>`:``}
+        <button class="pill ghost" id="restart">↻ Start over</button>
+        <button class="pill ghost" id="done">Done</button></div></div>`;
+    c.innerHTML=h;
+    const all=s.boards.flat();
+    if(s.missed.length) c.querySelector("#retry").onclick=()=>{ const m=s.missed; startMatch(m); render(); };
+    c.querySelector("#restart").onclick=()=>{ startMatch(all); render(); };
+    c.querySelector("#done").onclick=()=>{ state.matchS=null; render(); };
+    return;
+  }
+  const b=s.boards[s.bi], pct=Math.round(s.bi/s.boards.length*100);
+  const card=(txt,attr,cls)=>`<button class="mcard ${cls}" ${attr}>${esc(txt)}</button>`;
+  c.innerHTML=`<div class="stage">
+    <div class="prog"><div class="progtxt">Board ${s.bi+1} / ${s.boards.length}</div>
+      <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✕ ${s.misses}</div></div>
+    <p class="psub" style="text-align:center">Tap a word, then the description in Spanish that goes with it.</p>
+    <div class="mgrid">
+      <div class="mcol">${b.map((w,i)=>card(w.en,`data-w="${i}"`,
+        s.done[i]?'ok':s.pick===i?'sel':s.bad&&s.bad[0]===i?'no':'')).join('')}</div>
+      <div class="mcol">${s.order.map(i=>card(defOf(b[i]).d,`data-d="${i}"`,
+        s.done[i]?'ok':s.bad&&s.bad[1]===i?'no':'')).join('')}</div>
+    </div></div>`;
+  c.querySelectorAll("[data-w]").forEach(el=>el.onclick=()=>{ const i=+el.dataset.w; if(s.done[i]) return; s.pick=i; s.bad=null; render(); });
+  c.querySelectorAll("[data-d]").forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.d; if(s.done[i] || s.pick==null) return;
+    if(i===s.pick){ s.done[i]=true; s.pick=null; s.bad=null; }
+    else { s.misses++; s.bad=[s.pick,i]; const w=b[s.pick]; if(!s.missed.includes(w)) s.missed.push(w); }
+    if(Object.keys(s.done).length===b.length){ render(); setTimeout(()=>{ if(state.matchS===s){ s.bi++; if(s.bi<s.boards.length) dealBoard(); render(); } }, 600); return; }
+    render();
+  });
+}
+
 /* -------- Vocab home: All / Semana 1 / Semana 2 boxes -------- */
 function countWeek(n){ let c=0; unit().sets.forEach(s=>s.words.forEach(w=>{ if(weeksOf(w).includes(n)) c++; })); return c; }
 function renderVocabHome(c){
@@ -3471,13 +3619,21 @@ function renderVocabHome(c){
       ? { week:`Semana ${n}`, ic:WEEK_ICONS[n-1]||"📅", label:`Semana ${n}`, count:countWeek(n) }
       : { week:n, ic:GROUP_ICONS[n]||"🗂️", label:n, count:countWeek(n) })),
   ];
+  const nMatch=matchable(unit().sets.flatMap(st=>st.words)).length;
   c.innerHTML=`<div class="hub">${boxes.map(b=>`
     <div class="hubcard bigcard ${b.all?'allcard':''}" data-week="${esc(b.week)}">
       <span class="go">→</span>
       <span class="ic big">${b.ic}</span>
       <h3>${b.label}</h3>
       <div class="meta">${b.count} word${b.count===1?'':'s'}</div>
-    </div>`).join('')}</div>`;
+    </div>`).join('')}${nMatch?`
+    <div class="hubcard bigcard" id="matchBox">
+      <span class="go">→</span>
+      <span class="ic big">🔀</span>
+      <h3>Matching</h3>
+      <div class="meta">English word ↔ descripción en español · ${nMatch}</div>
+    </div>`:''}</div>`;
+  if(nMatch) c.querySelector("#matchBox").onclick=()=>{ startMatch(unit().sets.flatMap(st=>st.words)); render(); };
   c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; render(); });
 }
 
