@@ -1302,6 +1302,7 @@ function allWords(){ // words for the current group, tagged with their set name
   unit().sets.forEach(set=>{
     set.words.forEach(w=>{
       if(wk != null && !weeksOf(w).includes(wk)) return;
+      if(state.wpart && w.part !== state.wpart) return;
       out.push({...w, section:set.name});
     });
   });
@@ -1903,80 +1904,80 @@ const S2_DATA = {
       sets:[
         { name:"Verbs", words:[
           {es:"había", en:"there was/there were"},
-          {es:"abrazar(se)", en:"to hug (each other)", week:11},
+          {es:"abrazar(se)", en:"to hug (each other)", week:11, part:"Spelling"},
           {es:"besar(se)", en:"to kiss (each other)"},
-          {es:"coleccionar", en:"to collect", week:11},
-          {es:"divertirse (e-ie)", en:"to have fun", week:11},
+          {es:"coleccionar", en:"to collect", week:11, part:"Matching"},
+          {es:"divertirse (e-ie)", en:"to have fun", week:11, part:"Spelling"},
           {es:"felicitar", en:"to congratulate"},
           {es:"llevarse bien/mal", en:"to get along well/badly"},
-          {es:"llorar", en:"to cry", week:11},
-          {es:"mentir (e-ie)", en:"to lie", week:11},
+          {es:"llorar", en:"to cry", week:11, part:"Matching"},
+          {es:"mentir (e-ie)", en:"to lie", week:11, part:"Matching"},
           {es:"molestar", en:"to bother/to annoy"},
-          {es:"obedecer (c-zc)", en:"to obey", week:11},
+          {es:"obedecer (c-zc)", en:"to obey", week:11, part:"Spelling"},
           {es:"ofrecer (c-zc)", en:"to offer"},
           {es:"pelearse", en:"to fight"},
           {es:"permitir", en:"to permit/to allow"},
           {es:"portarse bien/mal", en:"to behave well/badly"},
           {es:"reunirse (u-ú)", en:"to get together"},
-          {es:"saltar (a la cuerda)", en:"to jump (rope)", week:11},
+          {es:"saltar (a la cuerda)", en:"to jump (rope)", week:11, part:"Spelling"},
         ]},
         { name:"Animals", words:[
           {es:"la cebra", en:"zebra"},
-          {es:"el conejo", en:"rabbit/bunny", week:11},
+          {es:"el conejo", en:"rabbit/bunny", week:11, part:"Matching"},
           {es:"el elefante", en:"elephant"},
           {es:"el gato", en:"cat"},
-          {es:"el león", en:"lion", week:11},
+          {es:"el león", en:"lion", week:11, part:"Spelling"},
           {es:"el perro", en:"dog"},
-          {es:"el pez (los peces)", en:"fish", week:11},
-          {es:"el pingüino", en:"penguin", week:11},
+          {es:"el pez (los peces)", en:"fish", week:11, part:"Matching"},
+          {es:"el pingüino", en:"penguin", week:11, part:"Spelling"},
           {es:"la serpiente", en:"snake"},
           {es:"la tortuga", en:"turtle"},
         ]},
         { name:"People", words:[
           {es:"el bebé / la bebé", en:"baby"},
-          {es:"los parientes", en:"relatives", week:11},
+          {es:"los parientes", en:"relatives", week:11, part:"Matching"},
           {es:"todo el mundo", en:"everyone"},
-          {es:"el vecino / la vecina", en:"neighbor", week:11},
+          {es:"el vecino / la vecina", en:"neighbor", week:11, part:"Matching"},
         ]},
         { name:"Toys", words:[
-          {es:"los bloques", en:"blocks", week:11},
+          {es:"los bloques", en:"blocks", week:11, part:"Spelling"},
           {es:"la cuerda", en:"rope"},
           {es:"el dinosaurio", en:"dinosaur"},
           {es:"la muñeca", en:"doll"},
           {es:"el muñeco", en:"action figure"},
           {es:"el oso de peluche", en:"teddy bear"},
-          {es:"el tren eléctrico", en:"electric train", week:11},
+          {es:"el tren eléctrico", en:"electric train", week:11, part:"Spelling"},
           {es:"el triciclo", en:"tricycle"},
         ]},
         { name:"Adjectives", words:[
-          {es:"bien educado (-a)", en:"well-behaved", week:11},
-          {es:"consentido (-a)", en:"spoiled", week:11},
+          {es:"bien educado (-a)", en:"well-behaved", week:11, part:"Spelling"},
+          {es:"consentido (-a)", en:"spoiled", week:11, part:"Spelling"},
           {es:"desobediente", en:"disobedient"},
-          {es:"generoso (-a)", en:"generous", week:11},
-          {es:"obediente", en:"obedient", week:11},
-          {es:"tímido (-a)", en:"shy", week:11},
+          {es:"generoso (-a)", en:"generous", week:11, part:"Spelling"},
+          {es:"obediente", en:"obedient", week:11, part:"Matching"},
+          {es:"tímido (-a)", en:"shy", week:11, part:"Matching"},
           {es:"travieso (-a)", en:"mischievous"},
         ]},
         { name:"Other Words", words:[
-          {es:"la colección (las colecciones)", en:"collection(s)", week:11},
+          {es:"la colección (las colecciones)", en:"collection(s)", week:11, part:"Spelling"},
           {es:"el desfile", en:"parade"},
           {es:"el día festivo", en:"holiday"},
           {es:"los fuegos artificiales", en:"fireworks"},
           {es:"la guardería infantil", en:"daycare center"},
-          {es:"la moneda", en:"coin", week:11},
+          {es:"la moneda", en:"coin", week:11, part:"Matching"},
           {es:"el mundo", en:"world"},
           {es:"el patio de recreo", en:"playground"},
           {es:"la verdad", en:"truth"},
         ]},
         { name:"How Often", words:[
           {es:"todos los días", en:"every day"},
-          {es:"por lo general", en:"in general", week:11},
+          {es:"por lo general", en:"in general", week:11, part:"Spelling"},
           {es:"generalmente", en:"generally"},
           {es:"muchas veces", en:"many times"},
-          {es:"a menudo", en:"often", week:11},
+          {es:"a menudo", en:"often", week:11, part:"Spelling"},
           {es:"de vez en cuando", en:"once in a while"},
           {es:"de niño (-a)", en:"as a child"},
-          {es:"de pequeño (-a)", en:"as a child", week:11},
+          {es:"de pequeño (-a)", en:"as a child", week:11, part:"Spelling"},
         ]},
         { name:"Indicators of Imperfect", words:[
           {es:"a veces", en:"sometimes"},
@@ -3217,10 +3218,10 @@ function renderSidebar(){
   });
   h+=`<div class="side-foot">Tap a set inside the unit, then Review → Practice. Everything auto-saves.</div>`;
   sb.innerHTML=h;
-  sb.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.unit; state.view="unit"; state.matchS=null; state.matchSetup=null; state.section="All"; state.session=null; state.msession=null; state.mpick=null; render();});
+  sb.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.unit; state.view="unit"; state.matchS=null; state.matchSetup=null; state.wpart=null; state.section="All"; state.session=null; state.msession=null; state.mpick=null; render();});
   sb.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{state.unitIdx=+b.dataset.toggle; state.expanded=!state.expanded; render();});
   sb.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{
-    state.view=b.dataset.view; state.session=null; state.msession=null; state.matchS=null; state.matchSetup=null; render();
+    state.view=b.dataset.view; state.session=null; state.msession=null; state.matchS=null; state.matchSetup=null; state.wpart=null; render();
   });
 }
 
@@ -3300,8 +3301,8 @@ function renderTop(){
   }
   t.innerHTML=`
     <button class="backbtn" id="back">← Vocab</button>
-    <div><h2>${esc(state.week)}</h2><div class="sub">${allWords().length} words</div></div>`;
-  t.querySelector("#back").onclick=()=>{ if(state.matchS){ state.matchS=null; render(); return; } if(state.matchSetup){ state.matchSetup=null; render(); return; } state.view="vocab"; state.pstep=null; state.session=null; render();};
+    <div><h2>${esc(state.week)}${state.wpart?` · ${esc(state.wpart)}`:''}</h2><div class="sub">${allWords().length} words</div></div>`;
+  t.querySelector("#back").onclick=()=>{ if(state.matchS){ state.matchS=null; if(state.wpart==='Matching') state.matchSetup=null, state.wpart=null; render(); return; } if(state.matchSetup){ state.matchSetup=null; if(state.wpart==='Matching') state.wpart=null; render(); return; } if(state.wpart){ if(state.pstep) state.pstep=null; else state.wpart=null; state.session=null; render(); return; } state.wpart=null; state.view="vocab"; state.pstep=null; state.session=null; render();};
 }
 
 function renderContent(){
@@ -3344,13 +3345,30 @@ function groupedWords(withBox){
   });
   return h;
 }
+// A week can be split the way the quiz is — `part:"Spelling"`, `part:"Matching"`
+// — and then it opens on one square per part instead of one long list.
+const PART_ICONS={Spelling:"✏️", Matching:"🔀"};
+function partsInWeek(){ const was=state.wpart; state.wpart=null; const ps=[...new Set(allWords().map(w=>w.part).filter(Boolean))]; state.wpart=was; return ps; }
+function renderParts(c, parts){
+  c.innerHTML=`<div class="hub">${parts.map(pt=>{ state.wpart=pt; const n=allWords().length; state.wpart=null;
+    return `<div class="hubcard bigcard" data-part="${esc(pt)}"><span class="go">→</span>
+      <span class="ic big">${PART_ICONS[pt]||"🗂️"}</span><h3>${esc(pt)}</h3>
+      <div class="meta">${n} word${n===1?'':'s'}</div></div>`; }).join('')}</div>`;
+  c.querySelectorAll("[data-part]").forEach(el=>el.onclick=()=>{
+    state.wpart=el.dataset.part;
+    // The Matching part goes straight to choosing words for a matching game.
+    if(state.wpart==='Matching'){ const n=matchable(allWords()).length; state.matchSetup={ mode:'random', count:n, picked:[] }; }
+    render();
+  });
+}
 function renderWordList(c){
+  if(!state.wpart){ const parts=partsInWeek(); if(parts.length) return renderParts(c, parts); }
   const words=allWords();
   if(words.length===0){
     c.innerHTML=`<div class="empty"><div class="em">📭</div>No words in <b>${esc(state.week)}</b> yet.<br>Tell me which words go here and I'll add them.</div>`;
     return;
   }
-  const nMatch=state.week==='All' ? 0 : matchable(words).length;
+  const nMatch=(state.week==='All' || state.wpart) ? 0 : matchable(words).length;
   c.innerHTML=`<button class="btn practicebtn" id="startPractice">✍️ Practice</button>${nMatch>=2?`<button class="btn practicebtn" id="startMatch" style="margin-top:-4px">🔀 Matching</button>`:''}${groupedWords(false)}`;
   c.querySelector("#startPractice").onclick=()=>{ ensureSelectedObj(); state.pstep="exclude"; render(); };
   if(nMatch>=2) c.querySelector("#startMatch").onclick=()=>{ state.matchSetup={ mode:'random', count:Math.min(10,nMatch), picked:[] }; render(); };
@@ -3630,7 +3648,7 @@ function renderMatch(c){
     const all=s.boards.flat();
     if(s.missed.length) c.querySelector("#retry").onclick=()=>{ const m=s.missed; startMatch(m); render(); };
     c.querySelector("#restart").onclick=()=>{ startMatch(all); render(); };
-    c.querySelector("#done").onclick=()=>{ state.matchS=null; state.matchSetup=null; render(); };
+    c.querySelector("#done").onclick=()=>{ state.matchS=null; state.matchSetup=null; if(state.wpart==='Matching') state.wpart=null; render(); };
     return;
   }
   const b=s.boards[s.bi], pct=Math.round(s.bi/s.boards.length*100);
@@ -3671,7 +3689,7 @@ function renderVocabHome(c){
       <h3>${b.label}</h3>
       <div class="meta">${b.count} word${b.count===1?'':'s'}</div>
     </div>`).join('')}</div>`;
-  c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; state.matchS=null; state.matchSetup=null; render(); });
+  c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; state.matchS=null; state.matchSetup=null; state.wpart=null; render(); });
 }
 
 /* -------- Grammar: gustar and possessives -------- */
