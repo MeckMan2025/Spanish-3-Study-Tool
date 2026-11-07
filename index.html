@@ -1168,6 +1168,98 @@ let GRAMMAR=[
   // pressure and these are not.
   { id:'mandirr', unit:'u2', name:'Mandatos — Irregulares', emoji:'⚡', blurb:'only the ones you have to memorise',
     build(){ return shuffle(MANDATO_ITEMS.filter(i => i.irreg)); } },
+
+  // Unit 3 — el subjuntivo (Examen, Semana 12). From the notes: yo form of
+  // the present, drop the -o, add the opposite endings; then CAR/GAR/ZAR,
+  // DISHES and boot verbs.
+  { id:'subj-reg', unit:'u3', name:'Subjuntivo — Regulares', emoji:'💭', blurb:'yo form, drop the -o, opposite endings: hable · coma · viva · tenga',
+    build(){ return conjDrill([...SUBJ_REG, ...SUBJ_YO], subj, v=>SUBJ_EN[v], 'Yo form of the present, drop the -o, add the opposite endings. -ar: e, es, e, emos, éis, en. -er/-ir: a, as, a, amos, áis, an.', 40, 'subjuntivo'); } },
+  { id:'subj-cgz', unit:'u3', name:'CAR · GAR · ZAR', emoji:'🔤', blurb:'c→qu, g→gu, z→c in all forms: toque · pague · cruce',
+    build(){ return conjDrill(SUBJ_CGZ, subj, v=>SUBJ_EN[v], 'CAR, GAR, ZAR change in ALL forms: c → qu, g → gu, z → c, so the sound stays the same before e.', 40, 'subjuntivo'); } },
+  { id:'subj-dishes', unit:'u3', name:'DISHES', emoji:'🍽️', blurb:'dar · ir · ser · haber · estar · saber — sepa, sea, haya, vaya, dé, esté, cha cha cha',
+    build(){ return conjDrill(Object.keys(SUBJ_DISHES), subj, v=>SUBJ_EN[v], 'DISHES: dé, vaya, sea, haya, esté, sepa — "sepa, sea, haya, vaya, dé, esté, cha cha cha". Dé and esté carry accents.', 36, 'subjuntivo'); } },
+  { id:'subj-boot', unit:'u3', name:'Boot Verbs', emoji:'👢', blurb:'piense · pensemos — the change stays in the boot',
+    build(){ return conjDrill(SUBJ_BOOT, subj, v=>SUBJ_EN[v], 'Boot verbs keep their stem change in yo, tú, él and ellos, but not in nosotros or vosotros.', 40, 'subjuntivo'); } },
+  { id:'subj-mix', unit:'u3', name:'Subjuntivo — Todo', emoji:'🎲', blurb:'every kind mixed, like the 40-point section of the exam',
+    build(){ return conjDrill([...SUBJ_REG, ...SUBJ_YO, ...SUBJ_CGZ, ...Object.keys(SUBJ_DISHES), ...SUBJ_BOOT], subj, v=>SUBJ_EN[v], 'Yo form, drop the -o, opposite endings — then check: CAR/GAR/ZAR? DISHES? Boot?', 40, 'subjuntivo'); } },
+  { id:'subj-when', unit:'u3', name:'¿Subjuntivo o no?', emoji:'⚖️', blurb:'trigger + que + change of subject — all 3, or no subjunctive',
+    build(){ return shuffle([...SUBJ_WHEN]); } },
+  { id:'subj-para', unit:'u3', name:'Párrafo', emoji:'📄', blurb:'one story, 13 blanks, in order — like the paragraph on the exam',
+    build(){ return SUBJ_PARAGRAPH.map((it, i) => ({ ...it, ask: `(${i + 1}/${SUBJ_PARAGRAPH.length}) ${it.ask}` })); } },
+];
+
+/* ======================= SUBJUNCTIVE (Unit 3) ======================= */
+const SUBJ_EN = {
+  hablar:'to speak', estudiar:'to study', trabajar:'to work', comer:'to eat', beber:'to drink', vivir:'to live', escribir:'to write',
+  leer:'to read', aprender:'to learn', abrir:'to open',
+  tener:'to have', hacer:'to do/make', poner:'to put', salir:'to leave', decir:'to say', traer:'to bring', venir:'to come', conocer:'to know (people)',
+  tocar:'to touch/play', buscar:'to look for', sacar:'to take out', practicar:'to practice', pagar:'to pay', llegar:'to arrive', jugar:'to play',
+  cruzar:'to cross', empezar:'to begin', almorzar:'to eat lunch',
+  dar:'to give', ir:'to go', ser:'to be', haber:'to have (aux.)', estar:'to be', saber:'to know (facts)',
+  pensar:'to think', querer:'to want', cerrar:'to close', entender:'to understand', poder:'to be able', volver:'to return', contar:'to count/tell', encontrar:'to find',
+};
+const SUBJ_REG = ['hablar','estudiar','trabajar','comer','beber','vivir','escribir','leer','aprender','abrir'];
+const SUBJ_YO = ['tener','hacer','poner','salir','decir','traer','venir','conocer'];
+const SUBJ_CGZ = ['tocar','buscar','sacar','practicar','pagar','llegar','jugar','cruzar','empezar','almorzar'];
+const SUBJ_BOOT = ['pensar','querer','cerrar','entender','poder','volver','contar','encontrar'];
+const SUBJ_DISHES = {
+  dar:['dé','des','dé','demos','deis','den'], ir:['vaya','vayas','vaya','vayamos','vayáis','vayan'],
+  ser:['sea','seas','sea','seamos','seáis','sean'], haber:['haya','hayas','haya','hayamos','hayáis','hayan'],
+  estar:['esté','estés','esté','estemos','estéis','estén'], saber:['sepa','sepas','sepa','sepamos','sepáis','sepan'],
+};
+// The yo form of the present, where it isn't just the stem + o.
+const SUBJ_YO_FORM = { tener:'tengo', hacer:'hago', poner:'pongo', salir:'salgo', decir:'digo', traer:'traigo', venir:'vengo', conocer:'conozco' };
+// Boot verbs: the stem inside the boot (yo, tú, él, ellos).
+const SUBJ_BOOT_STEM = { pensar:'piens', querer:'quier', cerrar:'cierr', entender:'entiend', poder:'pued', volver:'vuelv',
+  contar:'cuent', encontrar:'encuentr', jugar:'jueg', empezar:'empiez', almorzar:'almuerz' };
+function subj(inf){
+  if(SUBJ_DISHES[inf]) return Object.fromEntries(FORMS.map((k,i)=>[k, SUBJ_DISHES[inf][i]]));
+  const ar = inf.endsWith('ar')
+  const E = ar ? ['e','es','e','emos','éis','en'] : ['a','as','a','amos','áis','an'];
+  const plain = SUBJ_YO_FORM[inf] ? SUBJ_YO_FORM[inf].slice(0,-1) : inf.slice(0,-2);
+  const boot = SUBJ_BOOT_STEM[inf] || plain;
+  // c → qu, g → gu, z → c before the -ar verb's e endings, in every form.
+  const spell = (stem) => !ar ? stem : stem.replace(/c$/,'qu').replace(/g$/,'gu').replace(/z$/,'c');
+  return Object.fromEntries(FORMS.map((k,i)=>[k, spell((k==='nos'||k==='vos') ? plain : boot) + E[i]]));
+}
+const q = (ask, answer, why) => ({ ask, hint:'fill in the blank', answer, why });
+// All three or no subjunctive: a verb that requires it, que, a change of subject.
+const SUBJ_WHEN = [
+  q('Espero que tú ___ (decir) la verdad.','digas','Espero que + a new subject (tú) → subjunctive. Decir: digo → dig- → digas.'),
+  q('Es importante que nosotros ___ (hablar) español en clase.','hablemos','Es importante que + nosotros → subjunctive. -ar takes e: hablemos.'),
+  q('Quiero ___ (comer) tacos esta noche.','comer','Same subject (yo quiero, yo como) and no que → infinitive, not subjunctive.'),
+  q('Quiero que mi hermano ___ (comer) más verduras.','coma','Quiero que + a different subject → subjunctive. -er takes a: coma.'),
+  q('Mi mamá prefiere que yo ___ (llegar) temprano.','llegue','Prefiere que + yo → subjunctive. GAR: g → gu, llegue.'),
+  q('Ojalá que ___ (hacer) sol mañana.','haga','Ojalá que always takes the subjunctive. Hacer: hago → hag- → haga.'),
+  q('Necesito ___ (estudiar) para el examen.','estudiar','No que and no new subject → infinitive.'),
+  q('El profesor recomienda que ustedes ___ (estudiar) cada día.','estudien','Recomienda que + ustedes → subjunctive: estudien.'),
+  q('Sé que ella ___ (ser) muy inteligente.','es','Saber que reports a fact → indicative, not subjunctive.'),
+  q('Dudo que ellos ___ (ir) a la fiesta.','vayan','Dudo que → subjunctive. Ir is in DISHES: vayan.'),
+  q('Es necesario que tú ___ (estar) en la escuela a las ocho.','estés','Es necesario que + tú → subjunctive. Estar is in DISHES: estés.'),
+  q('Deseo que mis amigos ___ (tener) un buen día.','tengan','Deseo que + mis amigos → subjunctive. Tener: tengo → teng- → tengan.'),
+  q('Pienso que el examen ___ (ser) el viernes.','es','Pensar que states what you believe is true → indicative.'),
+  q('Es bueno que nosotros ___ (saber) las respuestas.','sepamos','Es bueno que + nosotros → subjunctive. Saber is in DISHES: sepamos.'),
+  q('Mis padres quieren que yo ___ (practicar) el piano.','practique','Quieren que + yo → subjunctive. CAR: c → qu, practique.'),
+  q('Te pido que me ___ (dar) tu número.','des','Pido que + tú → subjunctive. Dar is in DISHES: des.'),
+  q('Espero que ___ (haber) tacos en la fiesta.','haya','Espero que → subjunctive. Haber is in DISHES: haya.'),
+  q('Es posible que nosotros ___ (volver) tarde.','volvamos','Es posible que + nosotros → subjunctive. Boot verb, but nosotros is outside the boot: volvamos.'),
+  q('Quiero que tú ___ (pensar) antes de hablar.','pienses','Quiero que + tú → subjunctive. Boot verb, tú is inside the boot: pienses.'),
+  q('La entrenadora insiste en que el equipo ___ (empezar) a las tres.','empiece','Insiste en que → subjunctive. Boot (e → ie) and ZAR (z → c): empiece.'),
+];
+const SUBJ_PARAGRAPH = [
+  q('Mañana es la fiesta de quince años de mi prima. Mi tía quiere que todos nosotros ___ (llegar) a las siete.','lleguemos','Quiere que + nosotros. GAR: g → gu.'),
+  q('Ella espera que la quinceañera ___ (estar) contenta todo el día.','esté','Espera que → subjunctive. DISHES: esté.'),
+  q('Es importante que yo ___ (traer) el regalo.','traiga','Es importante que + yo. Traer: traigo → traig- → traiga.'),
+  q('Mi mamá recomienda que mi hermano ___ (ponerse) una corbata.','se ponga','Recomienda que + mi hermano. Poner: pongo → pong- → ponga, with se in front.'),
+  q('Ojalá que ___ (haber) mucha comida.','haya','Ojalá que → subjunctive. DISHES: haya.'),
+  q('Mi prima quiere que los chambelanes ___ (bailar) el vals perfectamente.','bailen','Quiere que + los chambelanes. -ar takes e: bailen.'),
+  q('Es necesario que ellos ___ (practicar) mucho antes de la fiesta.','practiquen','Es necesario que + ellos. CAR: c → qu.'),
+  q('Mi tío prefiere que la fiesta ___ (empezar) temprano.','empiece','Prefiere que + la fiesta. Boot e → ie and ZAR z → c.'),
+  q('Yo espero que mis amigos ___ (poder) venir también.','puedan','Espero que + mis amigos. Boot verb: puedan.'),
+  q('Es bueno que nosotros ___ (saber) bailar.','sepamos','Es bueno que + nosotros. DISHES: sepamos.'),
+  q('Mi abuela pide que todos ___ (comer) el pastel.','coman','Pide que + todos. -er takes a: coman.'),
+  q('Ojalá que tú ___ (ir) conmigo a la fiesta.','vayas','Ojalá que → subjunctive. DISHES: vayas.'),
+  q('Al final, mi prima desea que la noche ___ (ser) inolvidable.','sea','Desea que + la noche. DISHES: sea.'),
 ];
 
 /* ============================ CULTURE ============================ */
@@ -1215,6 +1307,33 @@ let CULTURE = [
     'Ropa vieja is the national dish of Cuba, and is popular in Puerto Rico too. It is shredded beef with vegetables, served with rice.',
     'Ají de gallina, from Peru, is a little spicy and very bright yellow from ají amarillo peppers. It is chicken in a creamy sauce made with ground walnuts, served over rice with potatoes and topped with hard-boiled eggs.',
     'Gallo pinto, called "painted rooster" for its colour, is the national dish of Costa Rica. Its base is rice and beans.',
+  ]},
+  { id:'dinero', name:'El Dinero', emoji:'💵', facts:[
+    'Being part of the European Union, Spain uses the euro. Each country has its own designs, but all are accepted. 1 euro = about $1.12 USD.',
+    '7 separate countries use a peso: Argentina, Chile, Colombia, Cuba, the Dominican Republic, Mexico and Uruguay. They all have different values, and you cannot use them in the other countries.',
+    'Costa Rica uses the colón, named after Cristóbal Colón. 565 colones = $1.00 USD.',
+    'The U.S. dollar is the legal tender in Ecuador, El Salvador, Panama and Puerto Rico.',
+    'El Salvador uses the dollar, and recently became the 1st country in the world to adopt Bitcoin as its currency.',
+  ]},
+  { id:'naturaleza', name:'La Naturaleza', emoji:'🐢', facts:[
+    'In Ecuador, the Galápagos Islands sit in the Pacific Ocean, where 3 major ocean currents meet and bring a wide variety of marine life. Lonesome George, the last Pinta tortoise, lived there, and Darwin studied there.',
+    'Tierra del Fuego, shared by Chile and Argentina, is the land south of the Strait of Magellan. Ushuaia is the closest city to Antarctica — still 2,500 miles away. Temperatures average 30–50 °F year round.',
+    'In Bolivia, the Salar de Uyuni is the world\'s largest salt flat. It is estimated to hold 10 billion tons of salt but is not being mined, and it is a breeding ground for flamingos.',
+    'Known as the "Río de cinco colores", Caño Cristales in Colombia turns red, yellow and pink between May and November, when an aquatic plant (Macarenia clavigera) blooms. The colours contrast with green plants easily seen in the clear water.',
+  ]},
+  { id:'animales', name:'Los Animales', emoji:'🦙', facts:[
+    'Cuy is South American Spanish for the same species of guinea pig seen in the U.S. These are much larger, though, because they are domesticated guinea pigs kept as livestock for meat.',
+    'The coati is a member of the raccoon family found from Arizona to South America. It has a long snout with a flexible nose, used to root in the soil for food.',
+    'A member of the camel family, it lives in the Andes from Peru to Argentina. It feeds on the semi-arid grasslands and plains but retreats to high elevations at night. Its wool is rare — it was almost extinct in the 60s.',
+    'The pink river dolphin lives throughout the Amazon: Bolivia, Colombia, Ecuador, Peru and Venezuela. It is born gray and turns pink as it ages, and it is rapidly disappearing because of threats to its habitat.',
+    'The blue-footed booby is a marine bird native to the western coasts of Central and South America. About half of all breeding pairs nest on the Galápagos. Their feet are blue from what they eat — the brighter, the healthier.',
+  ]},
+  { id:'terrenos', name:'Los Terrenos Extremos', emoji:'🏔️', facts:[
+    'El desierto de Atacama is a plateau covering 600 miles of land on the Pacific coast, west of the Andes, in Chile. It is the driest hot desert in the world, made mostly of salt lakes, and has become a dumping ground for discarded fast fashion.',
+    'La Amazonia runs through 9 countries, with 60% of the forest in Brazil. It is half of the planet\'s remaining rainforest and the most biodiverse tropical forest: 390 billion individual trees in 16,000 species.',
+    'Las Pampas are fertile South American lowlands covering more than 289,577 square miles, over parts of Argentina, most of Uruguay and part of Brazil: grassy plains, home of the gauchos.',
+    'Los Andes are the longest continental mountain range in the world and go through 7 South American countries. The highest peak is Aconcagua, 22,841 ft.',
+    'Las Líneas de Nazca are a series of designs and pictographs carved into the ground in Nazca, Peru, by scraping away the copper-coloured rock to show lighter ground. They have stayed intact for hundreds of years.',
   ]},
 ];
 
