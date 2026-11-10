@@ -2830,6 +2830,12 @@ function impfSetupLoad(){
   try{ const v=JSON.parse(localStorage.getItem(IMPF_SETUP_KEY)||'null'); if(v && Array.isArray(v.verbs) && Array.isArray(v.forms)) return {...impfSetupDefault(), ...v}; }catch(e){}
   return impfSetupDefault();
 }
+// A drill like "Imperfecto: -AR" opens the same setup, ticked for its own kind.
+function impfSetupFor(g){
+  const cfg=impfSetupLoad();
+  if(!g.preset) return cfg;
+  return { ...cfg, verbs:IMPF_KINDS.filter(k=>g.preset.includes(k.id)).flatMap(k=>k.verbs), sentences:!!g.sentences };
+}
 function impfSetupSave(cfg){ try{ localStorage.setItem(IMPF_SETUP_KEY, JSON.stringify(cfg)); }catch(e){} }
 // Every verb × pronoun chosen, shuffled, cut to the count. The worksheet
 // sentences go in on top when asked for.
@@ -2838,7 +2844,11 @@ function impfCustomQueue(cfg){
     return cfg.forms.map(k=>{ const p=pickSubj(k); return { ask:`${p.es} · ${v} (imperfecto)`, hint:en, answer:f[k], why:impfWhy(v) }; }); });
   const n = cfg.count==='all' ? items.length : Math.min(cfg.count, items.length);
   const out = shuffle(items).slice(0,n);
-  return shuffle(cfg.sentences ? [...out, ...IMPF_IRR_SENTENCES, ...IMPF_SENTENCES] : out);
+  // Sentences that fit what was picked: the ser/ir/ver ones with those verbs,
+  // the -ar/-er/-ir ones with regular verbs.
+  const kinds = new Set(cfg.verbs.map(v=>impfKindOf(v)?.id).filter(Boolean));
+  const sent = !cfg.sentences ? [] : [...(kinds.has('irr') ? IMPF_IRR_SENTENCES : []), ...(['ar','erir','boot','yo'].some(k=>kinds.has(k)) ? IMPF_SENTENCES : [])];
+  return shuffle([...out, ...sent]);
 }
 function impfCount(cfg){ return cfg.verbs.filter(impfKindOf).length * cfg.forms.length; }
 
@@ -3204,14 +3214,12 @@ const S2_GRAMMAR = [
     build(){ return shuffle([...Object.keys(PARTICIPLES), 'hablar','comer','vivir','creer','leer','oír','traer'].map(v=>({
       ask:v, hint:'past participle', answer:participle(v),
       why: PARTICIPLES[v] ? 'One of the irregulars from the song.' : /(aer|eer|oír)$/.test(v) ? 'Two vowels together → accent on the í: -ído.' : '-ar → -ado, -er/-ir → -ido.' }))); } },
-  { id:'s2-impf-ar', unit:'s2u5', name:'Imperfecto: -AR', emoji:'🕰️', blurb:'hablaba · hablabas · hablaba · hablábamos · hablabais · hablaban',
-    build(){ return conjDrill(IMPF_AR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.', 40, 'imperfecto'); } },
-  { id:'s2-impf-erir', unit:'s2u5', name:'Imperfecto: -ER / -IR', emoji:'⏳', blurb:'comía · vivía — the same endings for both',
-    build(){ return conjDrill(IMPF_ERIR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.', 40, 'imperfecto'); } },
-  { id:'s2-impf-irr', unit:'s2u5', name:'Imperfecto: Ser, Ir, Ver', emoji:'👀', blurb:'era · iba · veía — the only three irregulars',
-    build(){ return shuffle([...conjDrill(['ser','ir','ver'], v=>Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]])), v=>IMPF_IRR_EN[v],
-      'The only irregulars in the imperfect. ser: era, eras, era, éramos, erais, eran. ir: iba, ibas, iba, íbamos, ibais, iban. ver: veía, veías, veía, veíamos, veíais, veían.', 18, 'imperfecto'),
-      ...IMPF_IRR_SENTENCES]); } },
+  { id:'s2-impf-ar', unit:'s2u5', name:'Imperfecto: -AR', emoji:'🕰️', blurb:'hablaba · hablabas · hablaba · hablábamos · hablabais · hablaban', setup:true, preset:['ar'],
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
+  { id:'s2-impf-erir', unit:'s2u5', name:'Imperfecto: -ER / -IR', emoji:'⏳', blurb:'comía · vivía — the same endings for both', setup:true, preset:['erir'],
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
+  { id:'s2-impf-irr', unit:'s2u5', name:'Imperfecto: Ser, Ir, Ver', emoji:'👀', blurb:'era · iba · veía — the only three irregulars', setup:true, preset:['irr'], sentences:true,
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-custom', unit:'s2u5', name:'Imperfecto: Your Way', emoji:'🎛️', blurb:'pick the verbs, pronouns, boot verbs, irregulars…', setup:true,
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-practice', unit:'s2u5', name:'Más Práctica', emoji:'📝', blurb:'the worksheet sentences, -ar and -er/-ir mixed',
@@ -3575,7 +3583,7 @@ function renderParts(c, parts){
       <div class="meta">${esc(d.meta)}</div></div>`).join('')}</div>`;
   c.querySelectorAll("[data-wdrill]").forEach(el=>el.onclick=()=>{
     const g=GRAMMAR.find(x=>x.id===el.dataset.wdrill);
-    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupLoad(); render(); return; }
+    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupFor(g); render(); return; }
     state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
     render();
   });
@@ -3934,7 +3942,7 @@ function renderGrammarHome(c){
   c.querySelectorAll("[data-drill]").forEach(el=>el.onclick=()=>{
     const g=GRAMMAR.find(x=>x.id===el.dataset.drill);
     state.gtopic=g.id;
-    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupLoad(); render(); return; }
+    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupFor(g); render(); return; }
     state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
     render();
   });
