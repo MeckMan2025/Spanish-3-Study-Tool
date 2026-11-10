@@ -1159,7 +1159,7 @@ let GRAMMAR=[
     build(){ return shuffle(IOP_ANSWER_ITEMS); } },
   { id:'dopiop', unit:'u2', name:'DOP vs IOP', emoji:'⚔️', blurb:'both kinds mixed — the Semana 7 quiz',
     // Mixed on purpose: the quiz is "DOP vs IOP", and telling them apart is the
-    // whole skill. Practising each alone never asks that question.
+    // whole skill. Practicing each alone never asks that question.
     build(){ return shuffle([...DOP_ANSWER_ITEMS, ...IOP_ANSWER_ITEMS]); } },
   { id:'mandrev', unit:'u2', name:'Mandatos — Repaso', emoji:'📝', blurb:'tú, Ud. or Uds. — the 6-6 review',
     build(){ return shuffle(MANDATO_ITEMS); } },
@@ -3960,7 +3960,7 @@ function renderImpfSetup(c){
   const counts = [10,20,30].filter(k=>k<total);
   const nQ = cfg.count==='all' ? total : Math.min(cfg.count,total);
   let h=`<h2 class="ptitle">🎛️ Imperfect — your way</h2>
-    <p class="psub">Choose what to practise. Tap a kind to take all of it or none; tap a verb to add or drop just that one.</p>
+    <p class="psub">Choose what to practice. Tap a kind to take all of it or none; tap a verb to add or drop just that one.</p>
     <div class="sectionhdr">Kinds of verbs</div>
     <div class="msetmode" style="flex-wrap:wrap">${IMPF_KINDS.map(k=>{ const on=k.verbs.filter(has).length;
       return `<button class="dircard ${on===k.verbs.length?'on':''}" data-kind="${k.id}" style="flex:1 1 15rem${on && on<k.verbs.length?';border-style:dashed':''}"><span class="di">${k.emoji}</span>
