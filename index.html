@@ -3730,7 +3730,7 @@ function renderQuiz(c){
   }
 }
 
-/* -------- Matching: English word ↔ a description in Spanish -------- */
+/* -------- Matching: Spanish word ↔ a description in Spanish -------- */
 // A unit gets a Matching box once it has descriptions here, keyed by the
 // word's `es`. Words that mean the same thing share a `syn` so they never land
 // on the same board, where either answer would be right.
@@ -3779,7 +3779,7 @@ const DEFS = {
     "consentido (-a)":"Un niño que recibe todo lo que quiere.",
     "desobediente":"Alguien que no hace lo que le dicen.",
     "generoso (-a)":"Alguien que comparte sus cosas con los demás.",
-    "obediente":["Alguien que siempre hace lo que le dicen.", "Un niño que escucha a sus padres y sigue las reglas.", "Lo contrario de desobediente."],
+    "obediente":["Alguien que siempre hace lo que le dicen.", "Un niño que escucha a sus padres y sigue las reglas.", "Un estudiante que nunca rompe las reglas de la clase."],
     "tímido (-a)":["Alguien a quien no le gusta hablar con personas nuevas.", "Una persona que se pone roja cuando tiene que hablar en clase.", "Alguien callado que prefiere no ser el centro de atención."],
     "travieso (-a)":"Un niño que hace bromas y causa pequeños problemas.",
     "la colección (las colecciones)":"Un grupo de muchas cosas del mismo tipo que alguien junta.",
@@ -3804,7 +3804,7 @@ const DEFS = {
     "siempre":{d:"En todo momento; nunca al revés.", syn:"always"},
     "frecuentemente":{d:"Pasa mucho; con frecuencia.", syn:"often"},
     "por un rato":{d:"Durante un tiempo corto.", syn:"while"},
-    "todo el tiempo":{d:"Sin parar, en todo momento.", syn:"always"},
+    "todo el tiempo":{d:"Sin parar, desde la mañana hasta la noche.", syn:"always"},
   },
 };
 // A description can be one string or a list of them. A matching game picks
@@ -3834,26 +3834,26 @@ function renderMatchSetup(c){
   const ms=state.matchSetup, pool=matchable(allWords()), n=pool.length;
   const counts=[...MATCH_COUNTS.filter(k=>k<n), n];
   const chosen = ms.mode==='random' ? Math.min(ms.count,n) : ms.picked.length;
-  let h=`<h2 class="ptitle">🔀 Matching</h2>
-    <p class="psub">English word ↔ descripción en español</p>
+  let h=`<h2 class="ptitle">🔀 Emparejar</h2>
+    <p class="psub">Palabra en español ↔ descripción en español</p>
     <div class="msetmode">
       <button class="dircard ${ms.mode==='random'?'on':''}" data-mm="random"><span class="di">🎲</span>
-        <div class="dtx"><div class="dt">Random</div><div class="ds">Pick how many, the words are drawn for you</div></div></button>
+        <div class="dtx"><div class="dt">Al azar</div><div class="ds">Elige cuántas y las palabras salen al azar</div></div></button>
       <button class="dircard ${ms.mode==='pick'?'on':''}" data-mm="pick"><span class="di">✋</span>
-        <div class="dtx"><div class="dt">Choose words</div><div class="ds">Tick exactly the ones you want</div></div></button>
+        <div class="dtx"><div class="dt">Elegir palabras</div><div class="ds">Marca exactamente las que quieres</div></div></button>
     </div>`;
   if(ms.mode==='random'){
-    h+=`<div class="sectionhdr">How many words?</div><div class="mcounts">${counts.map(k=>
-      `<button class="pill ${Math.min(ms.count,n)===k?'':'ghost'}" data-cnt="${k}">${k===n?`All ${n}`:k}</button>`).join('')}</div>`;
+    h+=`<div class="sectionhdr">¿Cuántas palabras?</div><div class="mcounts">${counts.map(k=>
+      `<button class="pill ${Math.min(ms.count,n)===k?'':'ghost'}" data-cnt="${k}">${k===n?`Todas (${n})`:k}</button>`).join('')}</div>`;
   }else{
     h+=`<div class="sectionhdr" style="display:flex;justify-content:space-between;align-items:center">
-        <span>${ms.picked.length} of ${n} chosen</span>
-        <span><button class="pill ghost" id="mAll">All</button> <button class="pill ghost" id="mNone">None</button></span></div>
+        <span>${ms.picked.length} de ${n} elegidas</span>
+        <span><button class="pill ghost" id="mAll">Todas</button> <button class="pill ghost" id="mNone">Ninguna</button></span></div>
       <div class="mpick">${pool.map(w=>{ const on=ms.picked.includes(w.es);
         return `<button class="wcard ${on?'on':'off'}" data-pw="${esc(w.es)}"><span class="box">${on?'✓':''}</span>
-          <div class="txt"><div class="es">${esc(w.en)}</div><div class="en">${esc(w.es)}</div></div></button>`; }).join('')}</div>`;
+          <div class="txt"><div class="es">${esc(w.es)}</div></div></button>`; }).join('')}</div>`;
   }
-  h+=`<button class="practicebtn" id="goMatch" ${chosen>=2?'':'disabled'}>${chosen>=2?`Match ${chosen} words →`:'Choose at least 2 words'}</button>`;
+  h+=`<button class="practicebtn" id="goMatch" ${chosen>=2?'':'disabled'}>${chosen>=2?`Emparejar ${chosen} palabras →`:'Elige por lo menos 2 palabras'}</button>`;
   c.innerHTML=h;
   c.querySelectorAll("[data-mm]").forEach(b=>b.onclick=()=>{ ms.mode=b.dataset.mm; render(); });
   c.querySelectorAll("[data-cnt]").forEach(b=>b.onclick=()=>{ ms.count=+b.dataset.cnt; render(); });
@@ -3871,17 +3871,17 @@ function renderMatch(c){
   const s=state.matchS;
   if(s.bi>=s.boards.length){
     const right=s.total-s.missed.length, pct=s.total?Math.round(right/s.total*100):0;
-    let h=`<div class="stage summary"><div class="lbl">First-try score</div><div class="big">${pct}%</div>
-      <div class="lbl">${right} of ${s.total} matched on the first try</div>`;
+    let h=`<div class="stage summary"><div class="lbl">Al primer intento</div><div class="big">${pct}%</div>
+      <div class="lbl">${right} de ${s.total} emparejadas al primer intento</div>`;
     if(s.missed.length){
-      h+=`<div class="missed"><div class="sectionhdr">The ones that tripped you up</div>`;
-      s.missed.forEach(w=>{ h+=`<div class="m"><span>${esc(w.en)}</span><span>${esc(defOf(w).d)}</span></div>`; });
+      h+=`<div class="missed"><div class="sectionhdr">Las que te costaron</div>`;
+      s.missed.forEach(w=>{ h+=`<div class="m"><span>${esc(w.es)}</span><span>${esc(defOf(w).d)}</span></div>`; });
       h+=`</div>`;
     }
     h+=`<div class="fbrow">
-        ${s.missed.length?`<button class="pill" id="retry">🔁 Match the ${s.missed.length} tricky ones</button>`:``}
-        <button class="pill ghost" id="restart">↻ Start over</button>
-        <button class="pill ghost" id="done">Done</button></div></div>`;
+        ${s.missed.length?`<button class="pill" id="retry">🔁 Repasar las ${s.missed.length} difíciles</button>`:``}
+        <button class="pill ghost" id="restart">↻ Empezar de nuevo</button>
+        <button class="pill ghost" id="done">Terminar</button></div></div>`;
     c.innerHTML=h;
     const all=s.boards.flat();
     if(s.missed.length) c.querySelector("#retry").onclick=()=>{ const m=s.missed; startMatch(m); render(); };
@@ -3892,11 +3892,11 @@ function renderMatch(c){
   const b=s.boards[s.bi], pct=Math.round(s.bi/s.boards.length*100);
   const card=(txt,attr,cls)=>`<button class="mcard ${cls}" ${attr}>${esc(txt)}</button>`;
   c.innerHTML=`<div class="stage">
-    <div class="prog"><div class="progtxt">Board ${s.bi+1} / ${s.boards.length}</div>
+    <div class="prog"><div class="progtxt">Tablero ${s.bi+1} / ${s.boards.length}</div>
       <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✕ ${s.misses}</div></div>
-    <p class="psub" style="text-align:center">Tap a word, then the description in Spanish that goes with it.</p>
+    <p class="psub" style="text-align:center">Toca una palabra y luego la descripción que le corresponde.</p>
     <div class="mgrid">
-      <div class="mcol">${b.map((w,i)=>card(w.en,`data-w="${i}"`,
+      <div class="mcol">${b.map((w,i)=>card(w.es,`data-w="${i}"`,
         s.done[i]?'ok':s.pick===i?'sel':s.bad&&s.bad[0]===i?'no':'')).join('')}</div>
       <div class="mcol">${s.order.map(i=>card(defOf(b[i]).d,`data-d="${i}"`,
         s.done[i]?'ok':s.bad&&s.bad[1]===i?'no':'')).join('')}</div>
