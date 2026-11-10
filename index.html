@@ -2791,6 +2791,57 @@ const IMPF_IRR = {
   ver: ['veía','veías','veía','veíamos','veíais','veían'],
 };
 const IMPF_IRR_EN = { ser:'to be', ir:'to go', ver:'to see/watch' };
+// Imperfect, your way: pick the kinds of verb, the verbs, the pronouns and
+// how many. Boot verbs and present-tense irregulars are in on purpose: they
+// change in the present but are perfectly regular in the imperfect, which is
+// the trap — jugaba, not juegaba; tenía, not tengía.
+const IMPF_KINDS = [
+  { id:'ar',   name:'Regular -AR', emoji:'🕰️', about:'aba · abas · aba · ábamos · abais · aban',
+    verbs:['hablar','trabajar','esquiar','montar','estudiar','nadar','pagar','abrazarse','besar','coleccionar','felicitar','llorar','molestar','pelearse','portarse','saltar','llevarse'] },
+  { id:'erir', name:'Regular -ER / -IR', emoji:'⏳', about:'ía · ías · ía · íamos · íais · ían',
+    verbs:['comer','vivir','correr','escribir','abrir','obedecer','ofrecer','permitir','leer','beber'] },
+  { id:'boot', name:'Boot verbs', emoji:'👢', about:'stem-changers in the present — no change in the imperfect',
+    verbs:['jugar','pensar','querer','divertirse','mentir','dormir','poder','volver','soler','pedir'] },
+  { id:'yo',   name:'Irregular in the present', emoji:'🎭', about:'tengo, hago, digo… but regular in the imperfect',
+    verbs:['tener','hacer','decir','poner','salir','estar','conocer'] },
+  { id:'irr',  name:'Irregular: ser · ir · ver', emoji:'👀', about:'the only three irregulars in the imperfect',
+    verbs:['ser','ir','ver'] },
+];
+const IMPF_BOOT_CHANGE = { jugar:'u→ue', pensar:'e→ie', querer:'e→ie', divertirse:'e→ie', mentir:'e→ie', dormir:'o→ue', poder:'o→ue', volver:'o→ue', soler:'o→ue', pedir:'e→i' };
+const IMPF_MORE_EN = { pensar:'to think', dormir:'to sleep', poder:'to be able to', volver:'to return', pedir:'to ask for',
+  decir:'to say/tell', poner:'to put', salir:'to leave/go out', estar:'to be', conocer:'to know (people)' };
+const IMPF_FORM_LABEL = { yo:'yo', tu:'tú', el:'él / ella / Ud.', nos:'nosotros', vos:'vosotros', ellos:'ellos / Uds.' };
+const impfKindOf = v => IMPF_KINDS.find(k=>k.verbs.includes(v));
+function impfForms(v){
+  if(IMPF_IRR[v]) return Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]]));
+  return imperf(v);
+}
+function impfWhy(v){
+  const k=impfKindOf(v).id, base=v.replace(/se$/,'');
+  if(k==='irr') return `${v} is irregular in the imperfect: ${IMPF_IRR[v].join(', ')}.`;
+  const ends = base.endsWith('ar') ? '-aba endings' : '-ía endings';
+  if(k==='boot') return `${v} changes its stem in the present (${IMPF_BOOT_CHANGE[v]}), but never in the imperfect: ${ends} on ${base.slice(0,-2)}-.`;
+  if(k==='yo') return `${v} is irregular in the present, but regular in the imperfect: ${ends} on ${base.slice(0,-2)}-.`;
+  return k==='ar' ? '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.' : '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.';
+}
+const IMPF_SETUP_KEY='impfSetup';
+function impfSetupDefault(){ return { verbs:[...IMPF_KINDS[0].verbs, ...IMPF_KINDS[1].verbs, ...IMPF_KINDS[4].verbs], forms:[...FORMS], count:20, sentences:false }; }
+function impfSetupLoad(){
+  try{ const v=JSON.parse(localStorage.getItem(IMPF_SETUP_KEY)||'null'); if(v && Array.isArray(v.verbs) && Array.isArray(v.forms)) return {...impfSetupDefault(), ...v}; }catch(e){}
+  return impfSetupDefault();
+}
+function impfSetupSave(cfg){ try{ localStorage.setItem(IMPF_SETUP_KEY, JSON.stringify(cfg)); }catch(e){} }
+// Every verb × pronoun chosen, shuffled, cut to the count. The worksheet
+// sentences go in on top when asked for.
+function impfCustomQueue(cfg){
+  const items = cfg.verbs.filter(impfKindOf).flatMap(v=>{ const f=impfForms(v), en=IMPF_EN[v]||IMPF_IRR_EN[v]||IMPF_MORE_EN[v]||'';
+    return cfg.forms.map(k=>{ const p=pickSubj(k); return { ask:`${p.es} · ${v} (imperfecto)`, hint:en, answer:f[k], why:impfWhy(v) }; }); });
+  const n = cfg.count==='all' ? items.length : Math.min(cfg.count, items.length);
+  const out = shuffle(items).slice(0,n);
+  return shuffle(cfg.sentences ? [...out, ...IMPF_IRR_SENTENCES, ...IMPF_SENTENCES] : out);
+}
+function impfCount(cfg){ return cfg.verbs.filter(impfKindOf).length * cfg.forms.length; }
+
 // The worksheet's Más Práctica, with the verb in brackets where the blank is.
 const IMPF_IRR_SENTENCES = [
   fill('Frecuentemente yo ___ (ir) a la casa de mis primos.','iba','Yo, ir: iba. "Frecuentemente" signals the imperfect.'),
@@ -3161,13 +3212,8 @@ const S2_GRAMMAR = [
     build(){ return shuffle([...conjDrill(['ser','ir','ver'], v=>Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]])), v=>IMPF_IRR_EN[v],
       'The only irregulars in the imperfect. ser: era, eras, era, éramos, erais, eran. ir: iba, ibas, iba, íbamos, ibais, iban. ver: veía, veías, veía, veíamos, veíais, veían.', 18, 'imperfecto'),
       ...IMPF_IRR_SENTENCES]); } },
-  { id:'s2-impf-mix', unit:'s2u5', name:'Imperfecto: Todo Mezclado', emoji:'🔁', blurb:'-ar, -er/-ir and ser · ir · ver together, like the quiz',
-    build(){ const irr = v=>Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]]));
-      return shuffle([
-        ...conjDrill(IMPF_AR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.', 9, 'imperfecto'),
-        ...conjDrill(IMPF_ERIR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.', 8, 'imperfecto'),
-        ...conjDrill(['ser','ir','ver'], irr, v=>IMPF_IRR_EN[v], 'An irregular. ser: era… éramos. ir: iba… íbamos. ver: veía… veíamos.', 8, 'imperfecto'),
-      ]); } },
+  { id:'s2-impf-custom', unit:'s2u5', name:'Imperfecto: Your Way', emoji:'🎛️', blurb:'pick the verbs, pronouns, boot verbs, irregulars…', setup:true,
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-practice', unit:'s2u5', name:'Más Práctica', emoji:'📝', blurb:'the worksheet sentences, -ar and -er/-ir mixed',
     build(){ return shuffle([...IMPF_SENTENCES]); } },
   { id:'s2-pret-reg', unit:'s2u8', name:'Pretérito Regular', emoji:'⏮️', blurb:'-é -aste -ó · -í -iste -ió',
@@ -3344,7 +3390,7 @@ function switchLevel(n){
   state.level = n;
   if(READY.includes(n)) useLevel(n);
   Object.assign(state, { unitIdx:0, view:"unit", section:"All", week:"All", expanded:false, pstep:null, vcat:"all",
-    tsession:null, gtopic:null, gsession:null, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
+    tsession:null, gtopic:null, gsession:null, gsetup:null, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
   render(); window.scrollTo(0,0);
 }
 function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderContent(); } save(); }
@@ -3409,13 +3455,13 @@ function renderTop(){
     return;
   }
   if(state.view==="grammar"){
-    const inDrill = !!state.gsession;
-    const g = inDrill ? GRAMMAR.find(x=>x.id===state.gsession.drill) : null;
+    const inDrill = !!(state.gsession || state.gsetup);
+    const g = inDrill ? GRAMMAR.find(x=>x.id===(state.gsession ? state.gsession.drill : state.gsetup)) : null;
     t.innerHTML=`
       <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : unitLabel()}</button>
       <div><h2>${inDrill ? esc(g.name) : 'Grammar'}</h2>
       <div class="sub">${inDrill ? esc(g.blurb) : esc(grammarHere().map(x=>x.name).join(' · ') || 'Drills for this unit')}</div></div>`;
-    t.querySelector("#back").onclick=()=>{ if(inDrill){ state.gsession=null; state.gtopic=null; } else state.view="unit"; render(); };
+    t.querySelector("#back").onclick=()=>{ if(state.gsession){ state.gsession=null; if(!state.gsetup) state.gtopic=null; } else if(state.gsetup){ state.gsetup=null; state.gtopic=null; } else state.view="unit"; render(); };
     return;
   }
   if(state.view==="culture"){
@@ -3455,12 +3501,12 @@ function renderTop(){
     t.querySelector("#back").onclick=()=>{state.view="verbs"; state.cstep=null; state.csession=null; render();};
     return;
   }
-  if(state.view==="section" && state.gsession){
-    const g=GRAMMAR.find(x=>x.id===state.gsession.drill);
+  if(state.view==="section" && (state.gsession || state.gsetup)){
+    const g=GRAMMAR.find(x=>x.id===(state.gsession ? state.gsession.drill : state.gsetup));
     t.innerHTML=`
       <button class="backbtn" id="back">← ${esc(state.week)}</button>
       <div><h2>${esc(state.week)} · ${esc(g.name)}</h2><div class="sub">${esc(g.blurb)}</div></div>`;
-    t.querySelector("#back").onclick=()=>{ state.gsession=null; render(); };
+    t.querySelector("#back").onclick=()=>{ if(state.gsession) state.gsession=null; else state.gsetup=null; render(); };
     return;
   }
   t.innerHTML=`
@@ -3478,11 +3524,12 @@ function renderContent(){
   if(state.matchSetup && state.view==="section") return renderMatchSetup(c);
   if(state.view==="vocab") return renderVocabHome(c);
   if(state.view==="verbs") return state.tsession ? renderTypeQuiz(c) : renderVerbHome(c);
-  if(state.view==="grammar") return state.gsession ? renderGrammarQuiz(c) : renderGrammarHome(c);
+  if(state.view==="grammar") return state.gsession ? renderGrammarQuiz(c) : state.gsetup ? renderImpfSetup(c) : renderGrammarHome(c);
   if(state.view==="culture") return state.fsession ? renderFactQuiz(c)
     : state.ctopic ? renderCultureTopic(c) : renderCultureHome(c);
   if(state.view==="conjugate") return renderConjugate(c);
   if(state.view==="section" && state.gsession) return renderGrammarQuiz(c);
+  if(state.view==="section" && state.gsetup) return renderImpfSetup(c);
   // Vocab study view (a week): word list → Practice → exclude → direction → quiz
   if(state.pstep==="exclude") return renderExclude(c);
   if(state.pstep==="direction") return renderDirection(c);
@@ -3515,7 +3562,7 @@ function groupedWords(withBox){
 const PART_ICONS={Spelling:"✏️", Matching:"🔀", Conjugating:"🕰️"};
 // A quiz can have a part that is not words — Semana 12's imperfect
 // conjugations. It sits beside Spelling and Matching and opens a drill.
-const WEEK_DRILLS={ s2u5:{ 12:[{part:'Conjugating', drill:'s2-impf-mix', meta:'Imperfect: -ar, -er/-ir, ser · ir · ver'}] } };
+const WEEK_DRILLS={ s2u5:{ 12:[{part:'Conjugating', drill:'s2-impf-custom', meta:'Imperfect — choose verbs, pronouns, kinds'}] } };
 const weekDrills = () => (WEEK_DRILLS[unit().id]||{})[weekNum(state.week)] || [];
 function partsInWeek(){ const was=state.wpart; state.wpart=null; const ps=[...new Set(allWords().map(w=>w.part).filter(Boolean))]; state.wpart=was; return ps; }
 function renderParts(c, parts){
@@ -3528,6 +3575,7 @@ function renderParts(c, parts){
       <div class="meta">${esc(d.meta)}</div></div>`).join('')}</div>`;
   c.querySelectorAll("[data-wdrill]").forEach(el=>el.onclick=()=>{
     const g=GRAMMAR.find(x=>x.id===el.dataset.wdrill);
+    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupLoad(); render(); return; }
     state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
     render();
   });
@@ -3866,7 +3914,7 @@ function renderVocabHome(c){
       <h3>${b.label}</h3>
       <div class="meta">${b.count} word${b.count===1?'':'s'}</div>
     </div>`).join('')}</div>`;
-  c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; state.matchS=null; state.matchSetup=null; state.wpart=null; render(); });
+  c.querySelectorAll("[data-week]").forEach(el=>el.onclick=()=>{ state.week=el.dataset.week; state.view='section'; state.pstep=null; state.session=null; state.gsession=null; state.gsetup=null; state.matchS=null; state.matchSetup=null; state.wpart=null; render(); });
 }
 
 /* -------- Grammar: gustar and possessives -------- */
@@ -3886,9 +3934,53 @@ function renderGrammarHome(c){
   c.querySelectorAll("[data-drill]").forEach(el=>el.onclick=()=>{
     const g=GRAMMAR.find(x=>x.id===el.dataset.drill);
     state.gtopic=g.id;
+    if(g.setup){ state.gsetup=g.id; state.impfSetup=impfSetupLoad(); render(); return; }
     state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
     render();
   });
+}
+// The setup screen for Imperfecto: Your Way.
+function renderImpfSetup(c){
+  const cfg = state.impfSetup || (state.impfSetup = impfSetupLoad());
+  const has = v => cfg.verbs.includes(v);
+  const total = impfCount(cfg);
+  const counts = [10,20,30].filter(k=>k<total);
+  const nQ = cfg.count==='all' ? total : Math.min(cfg.count,total);
+  let h=`<h2 class="ptitle">🎛️ Imperfect — your way</h2>
+    <p class="psub">Choose what to practise. Tap a kind to take all of it or none; tap a verb to add or drop just that one.</p>
+    <div class="sectionhdr">Kinds of verbs</div>
+    <div class="msetmode" style="flex-wrap:wrap">${IMPF_KINDS.map(k=>{ const on=k.verbs.filter(has).length;
+      return `<button class="dircard ${on===k.verbs.length?'on':''}" data-kind="${k.id}" style="flex:1 1 15rem${on && on<k.verbs.length?';border-style:dashed':''}"><span class="di">${k.emoji}</span>
+        <div class="dtx"><div class="dt">${esc(k.name)} <span style="font-weight:400;opacity:.6">${on}/${k.verbs.length}</span></div><div class="ds">${esc(k.about)}</div></div></button>`; }).join('')}</div>
+    <div class="sectionhdr" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Verbs · ${cfg.verbs.filter(impfKindOf).length} chosen</span>
+      <span><button class="pill ghost" id="vAll">All</button> <button class="pill ghost" id="vNone">None</button></span></div>`;
+  IMPF_KINDS.forEach(k=>{
+    h+=`<div class="psub" style="margin:.6rem 0 .3rem;font-weight:700">${k.emoji} ${esc(k.name)}</div><div class="mpick">${k.verbs.map(v=>{ const on=has(v);
+      return `<button class="wcard ${on?'on':'off'}" data-v="${esc(v)}"><span class="box">${on?'✓':''}</span>
+        <div class="txt"><div class="es">${esc(v)}${IMPF_BOOT_CHANGE[v]?` <span style="opacity:.55;font-weight:400">${IMPF_BOOT_CHANGE[v]}</span>`:''}</div><div class="en">${esc(IMPF_EN[v]||IMPF_IRR_EN[v]||IMPF_MORE_EN[v]||'')}</div></div></button>`; }).join('')}</div>`;
+  });
+  h+=`<div class="sectionhdr">Pronouns</div><div class="mcounts">${FORMS.map(f=>
+      `<button class="pill ${cfg.forms.includes(f)?'':'ghost'}" data-form="${f}">${cfg.forms.includes(f)?'✓ ':''}${esc(IMPF_FORM_LABEL[f])}</button>`).join('')}</div>
+    <div class="sectionhdr">How many questions?</div><div class="mcounts">${counts.map(k=>
+      `<button class="pill ${cfg.count===k?'':'ghost'}" data-q="${k}">${k}</button>`).join('')}
+      <button class="pill ${cfg.count==='all'||!counts.includes(cfg.count)?'':'ghost'}" data-q="all">All ${total}</button></div>
+    <div class="mcounts" style="margin-top:.8rem"><button class="pill ${cfg.sentences?'':'ghost'}" id="sent">${cfg.sentences?'✓ ':''}Add the worksheet sentences (fill in the blank)</button></div>
+    <button class="practicebtn" id="goImpf" ${nQ?'':'disabled'}>${nQ?`Start — ${nQ} question${nQ===1?'':'s'}${cfg.sentences?' + sentences':''} →`:'Choose at least one verb and one pronoun'}</button>`;
+  c.innerHTML=h;
+  const upd = () => { impfSetupSave(cfg); render(); };
+  c.querySelectorAll("[data-kind]").forEach(b=>b.onclick=()=>{ const k=IMPF_KINDS.find(x=>x.id===b.dataset.kind);
+    const all=k.verbs.every(has); cfg.verbs = all ? cfg.verbs.filter(v=>!k.verbs.includes(v)) : [...new Set([...cfg.verbs, ...k.verbs])]; upd(); });
+  c.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{ const v=b.dataset.v; cfg.verbs = has(v) ? cfg.verbs.filter(x=>x!==v) : [...cfg.verbs, v]; upd(); });
+  c.querySelector("#vAll").onclick=()=>{ cfg.verbs=IMPF_KINDS.flatMap(k=>k.verbs); upd(); };
+  c.querySelector("#vNone").onclick=()=>{ cfg.verbs=[]; upd(); };
+  c.querySelectorAll("[data-form]").forEach(b=>b.onclick=()=>{ const f=b.dataset.form;
+    cfg.forms = cfg.forms.includes(f) ? cfg.forms.filter(x=>x!==f) : FORMS.filter(x=>x===f || cfg.forms.includes(x)); upd(); });
+  c.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{ cfg.count = b.dataset.q==='all' ? 'all' : +b.dataset.q; upd(); });
+  c.querySelector("#sent").onclick=()=>{ cfg.sentences=!cfg.sentences; upd(); };
+  c.querySelector("#goImpf").onclick=()=>{ if(!nQ) return; impfSetupSave(cfg);
+    const g=GRAMMAR.find(x=>x.id===state.gsetup);
+    state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false }; render(); window.scrollTo(0,0); };
 }
 function renderGrammarQuiz(c){
   const s=state.gsession, g=GRAMMAR.find(x=>x.id===s.drill);
