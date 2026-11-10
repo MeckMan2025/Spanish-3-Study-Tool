@@ -1412,6 +1412,9 @@ function weeksInUnit(){
 const WEEK_ICONS=["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟","1️⃣1️⃣","1️⃣2️⃣","1️⃣3️⃣","1️⃣4️⃣","1️⃣5️⃣"];
 // Named groups get an icon of their own; anything unlisted falls back to 🗂️.
 const GROUP_ICONS={"Food Vocab":"🍎"};
+// A word on two weeks' sheets can be in a different part of each:
+// part:{11:"Spelling", 12:"Matching"}. Otherwise part is just the name.
+const partOf = (w, wk) => (w.part && typeof w.part === 'object') ? (wk == null ? undefined : w.part[wk]) : w.part;
 function allWords(){ // words for the current group, tagged with their set name
   // "All" means no filter. Otherwise the group is either Semana N — match the
   // number — or a named list, where the label itself is what the words carry.
@@ -1421,8 +1424,9 @@ function allWords(){ // words for the current group, tagged with their set name
   unit().sets.forEach(set=>{
     set.words.forEach(w=>{
       if(wk != null && !weeksOf(w).includes(wk)) return;
-      if(state.wpart && w.part !== state.wpart) return;
-      out.push({...w, section:set.name});
+      const part = partOf(w, wk);
+      if(state.wpart && part !== state.wpart) return;
+      out.push({...w, part, section:set.name});
     });
   });
   return out;
@@ -1455,9 +1459,12 @@ const esc = s => (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;
 const promptOf = w => state.direction==="es2en" ? w.es : w.en;
 const answerOf = w => state.direction==="es2en" ? w.en : w.es;
 
-// Spanish answers KEEP the article (el/la/los…) — accents are still forgiven.
+// Spanish answers KEEP the article (el/la/los…) and the accents: a missing
+// á or ñ is a different word on the quiz, so it is wrong here too. Only
+// capitals and punctuation are forgiven. NFC so an accent typed as two
+// characters (a + ´) matches one typed as á.
 function normEs(s){
-  return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  return (s||"").normalize("NFC").toLowerCase()
     .replace(/[¿?¡!.,;:"']/g," ").replace(/\s+/g," ").trim();
 }
 function acceptableEs(expected){
@@ -2027,75 +2034,75 @@ const S2_DATA = {
           {es:"besar(se)", en:"to kiss (each other)"},
           {es:"coleccionar", en:"to collect", week:11, part:"Matching"},
           {es:"divertirse (e-ie)", en:"to have fun", week:11, part:"Spelling"},
-          {es:"felicitar", en:"to congratulate"},
-          {es:"llevarse bien/mal", en:"to get along well/badly"},
+          {es:"felicitar", en:"to congratulate", week:12, part:"Spelling"},
+          {es:"llevarse bien/mal", en:"to get along well/badly", week:12, part:"Matching"},
           {es:"llorar", en:"to cry", week:11, part:"Matching"},
           {es:"mentir (e-ie)", en:"to lie", week:11, part:"Matching"},
           {es:"molestar", en:"to bother/to annoy"},
           {es:"obedecer (c-zc)", en:"to obey", week:11, part:"Spelling"},
-          {es:"ofrecer (c-zc)", en:"to offer"},
-          {es:"pelearse", en:"to fight"},
-          {es:"permitir", en:"to permit/to allow"},
-          {es:"portarse bien/mal", en:"to behave well/badly"},
-          {es:"reunirse (u-ú)", en:"to get together"},
+          {es:"ofrecer (c-zc)", en:"to offer", week:12, part:"Spelling"},
+          {es:"pelearse", en:"to fight", week:12, part:"Matching"},
+          {es:"permitir", en:"to permit/to allow", week:12, part:"Matching"},
+          {es:"portarse bien/mal", en:"to behave well/badly", week:12, part:"Spelling"},
+          {es:"reunirse (u-ú)", en:"to get together", week:12, part:"Spelling"},
           {es:"saltar (a la cuerda)", en:"to jump (rope)", week:11, part:"Spelling"},
         ]},
         { name:"Animals", words:[
-          {es:"la cebra", en:"zebra"},
+          {es:"la cebra", en:"zebra", week:12, part:"Spelling"},
           {es:"el conejo", en:"rabbit/bunny", week:11, part:"Matching"},
           {es:"el elefante", en:"elephant"},
           {es:"el gato", en:"cat"},
           {es:"el león", en:"lion", week:11, part:"Spelling"},
-          {es:"el perro", en:"dog"},
+          {es:"el perro", en:"dog", week:12, part:"Matching"},
           {es:"el pez (los peces)", en:"fish", week:11, part:"Matching"},
-          {es:"el pingüino", en:"penguin", week:11, part:"Spelling"},
+          {es:"el pingüino", en:"penguin", week:[11,12], part:{11:"Spelling", 12:"Matching"}},
           {es:"la serpiente", en:"snake"},
-          {es:"la tortuga", en:"turtle"},
+          {es:"la tortuga", en:"turtle", week:12, part:"Spelling"},
         ]},
         { name:"People", words:[
-          {es:"el bebé / la bebé", en:"baby"},
+          {es:"el bebé / la bebé", en:"baby", week:12, part:"Spelling"},
           {es:"los parientes", en:"relatives", week:11, part:"Matching"},
           {es:"todo el mundo", en:"everyone"},
           {es:"el vecino / la vecina", en:"neighbor", week:11, part:"Matching"},
         ]},
         { name:"Toys", words:[
           {es:"los bloques", en:"blocks", week:11, part:"Spelling"},
-          {es:"la cuerda", en:"rope"},
+          {es:"la cuerda", en:"rope", week:12, part:"Spelling"},
           {es:"el dinosaurio", en:"dinosaur"},
           {es:"la muñeca", en:"doll"},
-          {es:"el muñeco", en:"action figure"},
+          {es:"el muñeco", en:"action figure", week:12, part:"Spelling"},
           {es:"el oso de peluche", en:"teddy bear"},
           {es:"el tren eléctrico", en:"electric train", week:11, part:"Spelling"},
-          {es:"el triciclo", en:"tricycle"},
+          {es:"el triciclo", en:"tricycle", week:12, part:"Matching"},
         ]},
         { name:"Adjectives", words:[
           {es:"bien educado (-a)", en:"well-behaved", week:11, part:"Spelling"},
           {es:"consentido (-a)", en:"spoiled", week:11, part:"Spelling"},
-          {es:"desobediente", en:"disobedient"},
+          {es:"desobediente", en:"disobedient", week:12, part:"Spelling"},
           {es:"generoso (-a)", en:"generous", week:11, part:"Spelling"},
           {es:"obediente", en:"obedient", week:11, part:"Matching"},
           {es:"tímido (-a)", en:"shy", week:11, part:"Matching"},
-          {es:"travieso (-a)", en:"mischievous"},
+          {es:"travieso (-a)", en:"mischievous", week:12, part:"Spelling"},
         ]},
         { name:"Other Words", words:[
           {es:"la colección (las colecciones)", en:"collection(s)", week:11, part:"Spelling"},
-          {es:"el desfile", en:"parade"},
+          {es:"el desfile", en:"parade", week:12, part:"Matching"},
           {es:"el día festivo", en:"holiday"},
           {es:"los fuegos artificiales", en:"fireworks"},
-          {es:"la guardería infantil", en:"daycare center"},
+          {es:"la guardería infantil", en:"daycare center", week:12, part:"Matching"},
           {es:"la moneda", en:"coin", week:11, part:"Matching"},
-          {es:"el mundo", en:"world"},
+          {es:"el mundo", en:"world", week:12, part:"Spelling"},
           {es:"el patio de recreo", en:"playground"},
-          {es:"la verdad", en:"truth"},
+          {es:"la verdad", en:"truth", week:12, part:"Spelling"},
         ]},
         { name:"How Often", words:[
-          {es:"todos los días", en:"every day"},
+          {es:"todos los días", en:"every day", week:12, part:"Matching"},
           {es:"por lo general", en:"in general", week:11, part:"Spelling"},
           {es:"generalmente", en:"generally"},
-          {es:"muchas veces", en:"many times"},
+          {es:"muchas veces", en:"many times", week:12, part:"Spelling"},
           {es:"a menudo", en:"often", week:11, part:"Spelling"},
-          {es:"de vez en cuando", en:"once in a while"},
-          {es:"de niño (-a)", en:"as a child"},
+          {es:"de vez en cuando", en:"once in a while", week:12, part:"Spelling"},
+          {es:"de niño (-a)", en:"as a child", week:12, part:"Matching"},
           {es:"de pequeño (-a)", en:"as a child", week:11, part:"Spelling"},
         ]},
         { name:"Indicators of Imperfect", words:[
@@ -2776,6 +2783,25 @@ const IMPF_ERIR = [['comer','to eat'],['vivir','to live'],['correr','to run'],['
   ['obedecer','to obey'],['ofrecer','to offer'],['permitir','to permit'],['divertirse','to have fun'],['mentir','to lie'],['tener','to have'],
   ['hacer','to do/make'],['leer','to read'],['beber','to drink'],['querer','to want']];
 const IMPF_EN = Object.fromEntries([...IMPF_AR, ...IMPF_ERIR]);
+// The only three irregulars in the imperfect (Imperfect Irregular Verbs notes):
+// ser, ir and ver. Nosotros carries the accent on all three.
+const IMPF_IRR = {
+  ser: ['era','eras','era','éramos','erais','eran'],
+  ir:  ['iba','ibas','iba','íbamos','ibais','iban'],
+  ver: ['veía','veías','veía','veíamos','veíais','veían'],
+};
+const IMPF_IRR_EN = { ser:'to be', ir:'to go', ver:'to see/watch' };
+// The worksheet's Más Práctica, with the verb in brackets where the blank is.
+const IMPF_IRR_SENTENCES = [
+  fill('Frecuentemente yo ___ (ir) a la casa de mis primos.','iba','Yo, ir: iba. "Frecuentemente" signals the imperfect.'),
+  fill('A veces Yesenia ___ (ver) películas de amor.','veía','Ella, ver: veía — keeps the e, with the accent on the í.'),
+  fill('Marta y yo ___ (ir) a la piscina para divertirnos todo el tiempo.','íbamos','Marta y yo = nosotros, ir: íbamos, with the accent on the í.'),
+  fill('Cuando ___ (ser) tú niña, siempre visitabas a tus abuelos en el verano.','eras','Tú, ser: eras.'),
+  fill('A menudo Julieta y tú ___ (ir) a Houston a visitar a familia.','ibais / iban','Julieta y tú = vosotros (ibais) — or ustedes (iban) outside Spain.'),
+  fill('Mi madre ___ (ser) atlética de niña.','era','Ella, ser: era — the same as yo.'),
+  fill('De vez en cuando Sergio y Diego ___ (ir) a bailar en las discotecas.','iban','Ellos, ir: iban.'),
+  fill('Vosotros ___ (ver) a vuestros primos cada verano.','veíais','Vosotros, ver: veíais.'),
+];
 const IMPF_SENTENCES = [
   fill('Cada invierno mi familia y yo ___ (esquiar) en las montañas.','esquiábamos','Nosotros, -ar: -ábamos, with the accent on the first a.'),
   fill('Cuando era niña, yo ___ (montar) a caballo todos los fines de semana.','montaba','Yo, -ar: -aba. "Cuando era niña" sets it in the past, as a habit.'),
@@ -3131,6 +3157,17 @@ const S2_GRAMMAR = [
     build(){ return conjDrill(IMPF_AR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.', 40, 'imperfecto'); } },
   { id:'s2-impf-erir', unit:'s2u5', name:'Imperfecto: -ER / -IR', emoji:'⏳', blurb:'comía · vivía — the same endings for both',
     build(){ return conjDrill(IMPF_ERIR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.', 40, 'imperfecto'); } },
+  { id:'s2-impf-irr', unit:'s2u5', name:'Imperfecto: Ser, Ir, Ver', emoji:'👀', blurb:'era · iba · veía — the only three irregulars',
+    build(){ return shuffle([...conjDrill(['ser','ir','ver'], v=>Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]])), v=>IMPF_IRR_EN[v],
+      'The only irregulars in the imperfect. ser: era, eras, era, éramos, erais, eran. ir: iba, ibas, iba, íbamos, ibais, iban. ver: veía, veías, veía, veíamos, veíais, veían.', 18, 'imperfecto'),
+      ...IMPF_IRR_SENTENCES]); } },
+  { id:'s2-impf-mix', unit:'s2u5', name:'Imperfecto: Todo Mezclado', emoji:'🔁', blurb:'-ar, -er/-ir and ser · ir · ver together, like the quiz',
+    build(){ const irr = v=>Object.fromEntries(FORMS.map((k,i)=>[k,IMPF_IRR[v][i]]));
+      return shuffle([
+        ...conjDrill(IMPF_AR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-ar: aba, abas, aba, ábamos, abais, aban. Only nosotros has an accent.', 9, 'imperfecto'),
+        ...conjDrill(IMPF_ERIR.map(x=>x[0]), imperf, v=>IMPF_EN[v], '-er and -ir: ía, ías, ía, íamos, íais, ían. Every form has the accent on the í.', 8, 'imperfecto'),
+        ...conjDrill(['ser','ir','ver'], irr, v=>IMPF_IRR_EN[v], 'An irregular. ser: era… éramos. ir: iba… íbamos. ver: veía… veíamos.', 8, 'imperfecto'),
+      ]); } },
   { id:'s2-impf-practice', unit:'s2u5', name:'Más Práctica', emoji:'📝', blurb:'the worksheet sentences, -ar and -er/-ir mixed',
     build(){ return shuffle([...IMPF_SENTENCES]); } },
   { id:'s2-pret-reg', unit:'s2u8', name:'Pretérito Regular', emoji:'⏮️', blurb:'-é -aste -ó · -í -iste -ió',
@@ -3418,6 +3455,14 @@ function renderTop(){
     t.querySelector("#back").onclick=()=>{state.view="verbs"; state.cstep=null; state.csession=null; render();};
     return;
   }
+  if(state.view==="section" && state.gsession){
+    const g=GRAMMAR.find(x=>x.id===state.gsession.drill);
+    t.innerHTML=`
+      <button class="backbtn" id="back">← ${esc(state.week)}</button>
+      <div><h2>${esc(state.week)} · ${esc(g.name)}</h2><div class="sub">${esc(g.blurb)}</div></div>`;
+    t.querySelector("#back").onclick=()=>{ state.gsession=null; render(); };
+    return;
+  }
   t.innerHTML=`
     <button class="backbtn" id="back">← Vocab</button>
     <div><h2>${esc(state.week)}${state.wpart?` · ${esc(state.wpart)}`:''}</h2><div class="sub">${allWords().length} words</div></div>`;
@@ -3437,6 +3482,7 @@ function renderContent(){
   if(state.view==="culture") return state.fsession ? renderFactQuiz(c)
     : state.ctopic ? renderCultureTopic(c) : renderCultureHome(c);
   if(state.view==="conjugate") return renderConjugate(c);
+  if(state.view==="section" && state.gsession) return renderGrammarQuiz(c);
   // Vocab study view (a week): word list → Practice → exclude → direction → quiz
   if(state.pstep==="exclude") return renderExclude(c);
   if(state.pstep==="direction") return renderDirection(c);
@@ -3466,13 +3512,25 @@ function groupedWords(withBox){
 }
 // A week can be split the way the quiz is — `part:"Spelling"`, `part:"Matching"`
 // — and then it opens on one square per part instead of one long list.
-const PART_ICONS={Spelling:"✏️", Matching:"🔀"};
+const PART_ICONS={Spelling:"✏️", Matching:"🔀", Conjugating:"🕰️"};
+// A quiz can have a part that is not words — Semana 12's imperfect
+// conjugations. It sits beside Spelling and Matching and opens a drill.
+const WEEK_DRILLS={ s2u5:{ 12:[{part:'Conjugating', drill:'s2-impf-mix', meta:'Imperfect: -ar, -er/-ir, ser · ir · ver'}] } };
+const weekDrills = () => (WEEK_DRILLS[unit().id]||{})[weekNum(state.week)] || [];
 function partsInWeek(){ const was=state.wpart; state.wpart=null; const ps=[...new Set(allWords().map(w=>w.part).filter(Boolean))]; state.wpart=was; return ps; }
 function renderParts(c, parts){
   c.innerHTML=`<div class="hub">${parts.map(pt=>{ state.wpart=pt; const n=allWords().length; state.wpart=null;
     return `<div class="hubcard bigcard" data-part="${esc(pt)}"><span class="go">→</span>
       <span class="ic big">${PART_ICONS[pt]||"🗂️"}</span><h3>${esc(pt)}</h3>
-      <div class="meta">${n} word${n===1?'':'s'}</div></div>`; }).join('')}</div>`;
+      <div class="meta">${n} word${n===1?'':'s'}</div></div>`; }).join('')}${weekDrills().map(d=>`
+      <div class="hubcard bigcard" data-wdrill="${esc(d.drill)}"><span class="go">→</span>
+      <span class="ic big">${PART_ICONS[d.part]||"🧩"}</span><h3>${esc(d.part)}</h3>
+      <div class="meta">${esc(d.meta)}</div></div>`).join('')}</div>`;
+  c.querySelectorAll("[data-wdrill]").forEach(el=>el.onclick=()=>{
+    const g=GRAMMAR.find(x=>x.id===el.dataset.wdrill);
+    state.gsession={ drill:g.id, queue:g.build(), i:0, correct:0, wrong:[], result:null, curWrong:false };
+    render();
+  });
   c.querySelectorAll("[data-part]").forEach(el=>el.onclick=()=>{
     state.wpart=el.dataset.part;
     // The Matching part goes straight to choosing words for a matching game.
@@ -3481,7 +3539,7 @@ function renderParts(c, parts){
   });
 }
 function renderWordList(c){
-  if(!state.wpart){ const parts=partsInWeek(); if(parts.length) return renderParts(c, parts); }
+  if(!state.wpart){ const parts=partsInWeek(); if(parts.length || weekDrills().length) return renderParts(c, parts); }
   const words=allWords();
   if(words.length===0){
     c.innerHTML=`<div class="empty"><div class="em">📭</div>No words in <b>${esc(state.week)}</b> yet.<br>Tell me which words go here and I'll add them.</div>`;
@@ -4392,7 +4450,7 @@ function renderPractice(c){
     h+=`<div class="answer">
         <input id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="your answer…">
         <button class="pill" id="check">Check</button>
-      </div>`;
+      </div>${state.direction==="es2en" ? '' : `<div class="accents">${ACCENTS.map(ch=>`<button class="accbtn" data-ch="${ch}">${ch}</button>`).join('')}</div>`}`;
     if(s.result==='wrong'){
       h+=`<div class="feedback bad">✕ Not quite — try again<span class="corr">Correct answer: <b>${esc(answerOf(w))}</b></span></div>`;
     }
@@ -4407,7 +4465,8 @@ function renderPractice(c){
   }else{
     const inp=c.querySelector("#ans"); inp.focus();
     const submit=()=>{
-      if(isCorrect(inp.value, answerOf(w))){
+      // Spanish answers need their accents; English ones stay forgiving.
+      if(state.direction==="es2en" ? isCorrect(inp.value, answerOf(w)) : checkAns(inp.value, answerOf(w), true)){
         if(!s.curWrong) s.correct++;   // only first-try counts toward score
         s.result='right';
       }else{
@@ -4416,6 +4475,7 @@ function renderPractice(c){
       }
       render();
     };
+    c.querySelectorAll(".accbtn").forEach(b=>b.onclick=()=>insertChar(b.dataset.ch));
     c.querySelector("#check").onclick=submit;
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter") submit(); });
   }
