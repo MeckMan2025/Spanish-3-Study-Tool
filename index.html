@@ -1369,6 +1369,7 @@ let state = {
   fsession:null,           // culture: match-the-fact quiz
   msession:null,           // map: the running map quiz
   mpick:null,              // map: country tapped on the review map
+  vtense:null,             // Verbs: the tense picked first (pres | impf | subj)
   cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
   cdisp:"es",              // prompt language: 'es' | 'en' | 'mix'
   ccover:"all",            // pronouns per verb: 'all' (all six) | 'mixed' (one each)
@@ -1611,7 +1612,7 @@ const SUBJECTS = [
 ];
 const SUBJ_BY_FORM = FORMS.reduce((m,f)=>{ m[f]=SUBJECTS.filter(s=>s.form===f); return m; }, {});
 const pickSubj = form => { const p=SUBJ_BY_FORM[form]; return p[Math.floor(Math.random()*p.length)]; };
-const VCAT_LABEL={all:"All verbs", regular:"Regular verbs", irregular:"Irregular verbs", boot:"Boot verbs"};
+const VCAT_LABEL={all:"All verbs", regular:"Regular verbs", irregular:"Irregular verbs", boot:"Boot verbs", ar:"-AR verbs", erir:"-ER / -IR verbs", impfirr:"Irregulares: ser, ir, ver"};
 const _reg=(inf,en)=>({inf,en,type:"regular"});
 const _boot=(inf,en,change)=>({inf,en,type:"boot",change});
 const _irr=(inf,en,forms)=>({inf,en,type:"irregular",forms});
@@ -3432,13 +3433,27 @@ function useLevel(n){
   DATA = d.DATA; GRAMMAR = d.GRAMMAR; CULTURE = d.CULTURE; VERBS_CONJ = d.VERBS_CONJ;
   if(state.unitIdx >= DATA.units.length) state.unitIdx = 0;
 }
-const catCount = t => t==="all" ? VERBS_CONJ.length : VERBS_CONJ.filter(v=>v.type===t).length;
+// In the imperfect the groups are by ending, and the only irregulars are
+// ser, ir and ver — added here if this level's list doesn't have them.
+const impfVerbs = () => [...VERBS_CONJ, ...Object.keys(IMPF_IRR).filter(k=>!VERBS_CONJ.some(v=>v.inf===k)).map(k=>({inf:k, en:IMPF_IRR_EN[k]||'', type:'irregular'}))];
+const impfBase = v => v.inf.replace(/se$/,'');
+function catList(t, tense=state.ctense){
+  if(tense==='impf'){
+    const all=impfVerbs();
+    if(t==='ar') return all.filter(v=>!IMPF_IRR[impfBase(v)] && impfBase(v).endsWith('ar'));
+    if(t==='erir') return all.filter(v=>!IMPF_IRR[impfBase(v)] && /(er|ir|ír)$/.test(impfBase(v)));
+    if(t==='impfirr') return all.filter(v=>IMPF_IRR[impfBase(v)]);
+    return all;
+  }
+  return t==="all" ? VERBS_CONJ : VERBS_CONJ.filter(v=>v.type===t);
+}
+const catCount = (t, tense) => catList(t, tense).length;
 // DISHES: the six irregulars of the present subjunctive. Haber is not on the
 // verb list (it is only ever a helper verb), so it joins for the subjunctive.
 const DISHES = ['dar','ir','saber','haber','estar','ser'];
 const HABER_V = _irr("haber","to have (helping verb)",{yo:"he",tu:"has",el:"ha",nos:"hemos",vos:"habéis",ellos:"han"});
 const catVerbs = () => {
-  const list = state.vcat==="all" ? VERBS_CONJ : VERBS_CONJ.filter(v=>v.type===state.vcat);
+  const list = catList(state.vcat);
   const withHaber = state.ctense==='subj' && ['all','irregular'].includes(state.vcat) && VERBS_CONJ.some(v=>v.inf==='dar') && !list.some(v=>v.inf==='haber');
   return withHaber ? [...list, HABER_V] : list;
 };
@@ -3469,7 +3484,7 @@ function switchLevel(n){
   state.level = n;
   if(READY.includes(n)) useLevel(n);
   Object.assign(state, { unitIdx:0, view:"unit", section:"All", week:"All", expanded:false, pstep:null, vcat:"all",
-    tsession:null, gtopic:null, gsession:null, gsetup:null, gfolder:null, gfolderHome:false, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
+    tsession:null, gtopic:null, gsession:null, gsetup:null, gfolder:null, gfolderHome:false, vtense:null, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
   render(); window.scrollTo(0,0);
 }
 function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderContent(); } save(); }
@@ -3561,10 +3576,10 @@ function renderTop(){
     // isn't a one-way door out of the whole area.
     const inType = !!state.tsession;
     t.innerHTML=`
-      <button class="backbtn" id="back">← ${inType ? 'Verbs' : unitLabel()}</button>
-      <div><h2>${inType ? 'Which type is it?' : 'Verbs'}</h2>
-      <div class="sub">${inType ? 'Regular · boot · irregular' : 'Conjugation practice'}</div></div>`;
-    t.querySelector("#back").onclick=()=>{ if(inType) state.tsession=null; else state.view="unit"; render(); };
+      <button class="backbtn" id="back">← ${inType ? TENSES.pres.label : state.vtense ? 'Verbs' : unitLabel()}</button>
+      <div><h2>${inType ? 'Which type is it?' : state.vtense ? `${TENSES[state.vtense].emoji} ${TENSES[state.vtense].label}` : 'Verbs'}</h2>
+      <div class="sub">${inType ? 'Regular · boot · irregular' : state.vtense ? 'Pick a group of verbs' : 'Choose a tense'}</div></div>`;
+    t.querySelector("#back").onclick=()=>{ if(inType) state.tsession=null; else if(state.vtense) state.vtense=null; else state.view="unit"; render(); };
     return;
   }
   if(state.view==="vocab"){
@@ -3577,7 +3592,7 @@ function renderTop(){
   if(state.view==="conjugate"){
     t.innerHTML=`
       <button class="backbtn" id="back">← Verbs</button>
-      <div><h2>${esc(VCAT_LABEL[state.vcat]||'Verbs')}</h2><div class="sub">Conjugation</div></div>`;
+      <div><h2>${esc(VCAT_LABEL[state.vcat]||'Verbs')}</h2><div class="sub">${esc(TENSES[state.ctense||'pres'].label)}</div></div>`;
     t.querySelector("#back").onclick=()=>{state.view="verbs"; state.cstep=null; state.csession=null; render();};
     return;
   }
@@ -4257,10 +4272,7 @@ function renderUnitHome(c){
   const cards=[
     ...(unit().map ? [{key:'map', ic:'🗺️', title:'Map', desc:`${MAP_COUNTRIES.length} countries · names, capitals, where they are`, cls:'allcard'}] : []),
     ...(unit().nat ? [{key:'nat', ic:'🛂', title:'Nacionalidades', desc:`${MAP_COUNTRIES.length} countries · capital, país, adjetivo`, cls:'allcard'}] : []),
-    // Unit 5's big grammar topic gets its own square straight to the drills.
-    ...(grammarHere().some(g=>g.id.startsWith('s2-impf')) ? [{key:'impf', ic:'🕰️', title:'Imperfecto', desc:'Conjugate in the imperfect · -ar, -er/-ir, ser/ir/ver, your way', cls:'allcard'}] : []),
-    ...(grammarHere().some(g=>g.id==='s2-impf-irr') ? [{key:'impf-irr', ic:'👀', title:'Imperfecto: Irregulares', desc:'Ser · Ir · Ver — each on its own, or all three', cls:''}] : []),
-    {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:unit().map||grammarHere().some(g=>g.id==='s2-impf-irr')?'':'allcard'},
+    {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:unit().map?'':'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
     {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().filter(g=>!g.folder).map(g=>g.name).concat([...new Set(grammarHere().map(g=>g.folder).filter(Boolean))].map(f=>GFOLDERS[f].name)).join(' · ') || 'Nothing added yet'), cls:''},
     {key:'culture', ic:'🌎', title:'Culture', desc: cultureHere().length
@@ -4275,33 +4287,44 @@ function renderUnitHome(c){
       <div class="meta">${card.desc}</div>
     </div>`).join('')}</div>`;
   c.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{
-    const go=el.dataset.go;
-    state.view = go.startsWith('impf') ? 'grammar' : go; state.session=null;
-    // The irregulars square opens straight into the ser/ir/ver drill's setup.
+    state.view=el.dataset.go; state.session=null;
     state.gsession=null; state.gsetup=null; state.gfolder=null; state.gfolderHome=false;
-    if(go==='impf-irr'){ state.gfolder='irr'; state.gfolderHome=true; }
     render();
   });
 }
 
 /* -------- Verbs home: conjugation category boxes -------- */
+// First the tense, then a screen of its own with that tense's verb groups.
 function renderVerbHome(c){
-  const boxes=[{cat:'all',ic:'🔀',all:true},{cat:'regular',ic:'✅'},{cat:'irregular',ic:'⚡'},{cat:'boot',ic:'🥾'}];
-  c.innerHTML=`<div class="hub">${boxes.map(b=>{const n=catCount(b.cat);return `
+  if(!state.vtense || !tensesHere().includes(state.vtense)){
+    state.vtense=null;
+    c.innerHTML=`<div class="hub">${tensesHere().map(k=>{ const t=TENSES[k]; return `
+      <div class="hubcard bigcard" data-vtense="${k}">
+        <span class="go">→</span><span class="ic big">${t.emoji}</span>
+        <h3>${t.label}</h3><div class="meta">${esc(t.blurb)}</div>
+      </div>`; }).join('')}</div>`;
+    c.querySelectorAll("[data-vtense]").forEach(el=>el.onclick=()=>{ state.vtense=el.dataset.vtense; state.ctense=state.vtense; state.cview=state.vtense; render(); });
+    return;
+  }
+  const tense=state.vtense; state.ctense=tense;
+  const boxes = tense==='impf'
+    ? [{cat:'all',ic:'🔀',all:true},{cat:'ar',ic:'🅰️'},{cat:'erir',ic:'⏳'},{cat:'impfirr',ic:'⚡'}]
+    : [{cat:'all',ic:'🔀',all:true},{cat:'regular',ic:'✅'},{cat:'irregular',ic:'⚡'},{cat:'boot',ic:'🥾'}];
+  c.innerHTML=`<div class="hub">${boxes.map(b=>{const n=catCount(b.cat, tense);return `
     <div class="hubcard bigcard ${b.all?'allcard':''}" data-vcat="${b.cat}">
       <span class="go">→</span><span class="ic big">${b.ic}</span>
       <h3>${VCAT_LABEL[b.cat]}</h3><div class="meta">${n} verb${n===1?'':'s'}</div>
     </div>`;}).join('')}
-    ${(state.level||3)===3 && VERBS_CONJ.some(v=>v.inf==='dar') ? `<div class="hubcard bigcard" data-dishes-home>
+    ${tense==='subj' && VERBS_CONJ.some(v=>v.inf==='dar') ? `<div class="hubcard bigcard" data-dishes-home>
       <span class="go">→</span><span class="ic big">🍽️</span>
       <h3>DISHES (subjuntivo)</h3><div class="meta">dé · haya · sea · esté · sepa · vaya</div>
     </div>` : ''}
-    <div class="hubcard bigcard" data-type-quiz>
+    ${tense==='pres' ? `<div class="hubcard bigcard" data-type-quiz>
       <span class="go">→</span><span class="ic big">🔎</span>
       <h3>Which type is it?</h3><div class="meta">${VERBS_CONJ.length} verbs · regular, boot or irregular</div>
-    </div></div>`;
-  c.querySelectorAll("[data-vcat]").forEach(el=>el.onclick=()=>{ state.vcat=el.dataset.vcat; state.view='conjugate'; state.cstep=null; state.csession=null; render(); });
-  c.querySelector("[data-type-quiz]").onclick=()=>{ startTypeQuiz(); render(); };
+    </div>` : ''}</div>`;
+  c.querySelectorAll("[data-vcat]").forEach(el=>el.onclick=()=>{ state.vcat=el.dataset.vcat; state.view='conjugate'; state.cstep=null; state.csession=null; state.cview=tense; render(); });
+  const tq=c.querySelector("[data-type-quiz]"); if(tq) tq.onclick=()=>{ startTypeQuiz(); render(); };
   // Straight into the six subjunctive irregulars: pick the pronouns and go.
   const dh=c.querySelector("[data-dishes-home]");
   if(dh) dh.onclick=()=>{ state.vcat='all'; state.ctense='subj'; state.view='conjugate'; state.csession=null; onlyDishes(); state.cstep='coverage'; render(); };
@@ -4415,16 +4438,15 @@ function renderCList(c){
   ensureCSelected();
   const open=openSet();
   let h=`<button class="practicebtn" id="startC">📝 Practice conjugations</button>
-    <p class="psub" style="margin-top:12px">Tap a verb to see all six forms in:</p>${tensePills()}<div class="wordgrid">`;
+    <p class="psub" style="margin-top:12px">Tap a verb to see all six forms in the ${esc(TENSES[state.ctense||'pres'].label.toLowerCase())}.</p><div class="wordgrid">`;
   catVerbs().forEach(v=>{ const on=!!open[v.inf];
     h+=`<div class="wcard read" data-open="${esc(v.inf)}" style="cursor:pointer${on?';grid-column:1/-1':''}"><div class="txt" style="width:100%">
       <div class="es" style="display:flex;justify-content:space-between;gap:6px">${esc(v.inf)}<span style="opacity:.5">${on?'▴':'▾'}</span></div><div class="en">${esc(v.en)}</div>
-      ${on?conjChart(v, state.cview):''}</div></div>`; });
+      ${on?conjChart(v, state.ctense||'pres'):''}</div></div>`; });
   h+=`</div>`;
   c.innerHTML=h;
-  wireTensePills(c);
   c.querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>{ open[el.dataset.open]=!open[el.dataset.open]; render(); });
-  c.querySelector("#startC").onclick=()=>{ ensureCSelected(); state.cstep='tense'; render(); };
+  c.querySelector("#startC").onclick=()=>{ ensureCSelected(); state.cstep='exclude'; render(); };
 }
 function renderCTense(c){
   const ts=tensesHere();
@@ -4460,7 +4482,7 @@ function renderCExclude(c){
   c.innerHTML=h;
   c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!cIsSel({inf:el.dataset.inf}); render(); });
   c.querySelectorAll("[data-peek]").forEach(b=>b.onclick=(e)=>{ e.stopPropagation(); const o=openSet(); o[b.dataset.peek]=!o[b.dataset.peek]; render(); });
-  c.querySelector("#cback").onclick=()=>{ state.cstep='tense'; render(); };
+  c.querySelector("#cback").onclick=()=>{ state.cstep=null; render(); };
   c.querySelector("#cinclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=true); render(); };
   c.querySelector("#cexclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=false); render(); };
   const dish=c.querySelector("#cDishes"); if(dish) dish.onclick=()=>{ onlyDishes(); render(); };
