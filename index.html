@@ -3422,9 +3422,18 @@ function useLevel(n){
   if(state.unitIdx >= DATA.units.length) state.unitIdx = 0;
 }
 const catCount = t => t==="all" ? VERBS_CONJ.length : VERBS_CONJ.filter(v=>v.type===t).length;
-const catVerbs = () => state.vcat==="all" ? VERBS_CONJ : VERBS_CONJ.filter(v=>v.type===state.vcat);
+// DISHES: the six irregulars of the present subjunctive. Haber is not on the
+// verb list (it is only ever a helper verb), so it joins for the subjunctive.
+const DISHES = ['dar','ir','saber','haber','estar','ser'];
+const HABER_V = _irr("haber","to have (helping verb)",{yo:"he",tu:"has",el:"ha",nos:"hemos",vos:"habéis",ellos:"han"});
+const catVerbs = () => {
+  const list = state.vcat==="all" ? VERBS_CONJ : VERBS_CONJ.filter(v=>v.type===state.vcat);
+  const withHaber = state.ctense==='subj' && ['all','irregular'].includes(state.vcat) && VERBS_CONJ.some(v=>v.inf==='dar') && !list.some(v=>v.inf==='haber');
+  return withHaber ? [...list, HABER_V] : list;
+};
 function ensureCSelected(){ if(state.cselected===null){ state.cselected={}; VERBS_CONJ.forEach(v=>state.cselected[v.inf]=true); } }
-const cIsSel = v => state.cselected===null ? true : !!state.cselected[v.inf];
+// A verb nobody has ticked either way (haber, joining late) counts as in.
+const cIsSel = v => state.cselected===null ? true : state.cselected[v.inf] !== false;
 const cIncluded = () => catVerbs().filter(cIsSel);
 
 /* ============================ RENDER ============================ */
@@ -4361,26 +4370,33 @@ function renderCTense(c){
     <h2 class="ptitle">Which tense?</h2>
     <p class="psub">Every verb you pick next is asked in this tense.</p>
     <div class="dirlist">${ts.map(k=>{ const t=TENSES[k];
-      return `<button class="dircard${state.ctense===k?' on':''}" data-tense="${k}"><span class="di">${t.emoji}</span><div class="dtx"><div class="dt">${t.label}</div><div class="dd">${esc(t.blurb)}</div></div><span class="go">→</span></button>`; }).join('')}</div>`;
+      return `<button class="dircard${state.ctense===k?' on':''}" data-tense="${k}"><span class="di">${t.emoji}</span><div class="dtx"><div class="dt">${t.label}</div><div class="dd">${esc(t.blurb)}</div></div><span class="go">→</span></button>`; }).join('')}
+      ${ts.includes('subj') ? `<button class="dircard" data-dishes><span class="di">🍽️</span><div class="dtx"><div class="dt">DISHES (subjuntivo)</div><div class="dd">dé · haya · sea · esté · sepa · vaya: just the six irregulars</div></div><span class="go">→</span></button>` : ''}</div>`;
   c.querySelector("#cback").onclick=()=>{ state.cstep=null; render(); };
   c.querySelectorAll("[data-tense]").forEach(b=>b.onclick=()=>{ state.ctense=b.dataset.tense; state.cstep='exclude'; render(); });
+  const d=c.querySelector("[data-dishes]");
+  if(d) d.onclick=()=>{ state.ctense='subj'; state.vcat='all'; onlyDishes(); state.cstep='coverage'; render(); };
 }
+// Tick just the DISHES verbs, everything else out.
+function onlyDishes(){ ensureCSelected(); catVerbs().forEach(v=>state.cselected[v.inf]=DISHES.includes(v.inf)); }
 function renderCExclude(c){
   ensureCSelected();
   const verbs=catVerbs(), incl=verbs.filter(cIsSel).length;
   let h=`<button class="back" id="cback">‹ Back</button>
     <h2 class="ptitle">Which verbs? <span style="font-weight:500;opacity:.6">· ${esc(TENSES[state.ctense||'pres'].label)}</span></h2>
     <p class="psub">All in by default. Tap a verb to <b>leave it out</b>.</p>
-    <div class="toolbar"><button class="btn" id="cinclAll">Select all</button><button class="btn subtle" id="cexclAll">Deselect all</button><span class="count">${incl} of ${verbs.length} in</span></div>
+    <div class="toolbar"><button class="btn" id="cinclAll">Select all</button><button class="btn subtle" id="cexclAll">Deselect all</button>${state.ctense==='subj' && verbs.some(v=>DISHES.includes(v.inf)) ? `<button class="btn subtle" id="cDishes">🍽️ Just DISHES</button>` : ''}<span class="count">${incl} of ${verbs.length} in</span></div>
     <div class="wordgrid">`;
   verbs.forEach(v=>{ const on=cIsSel(v);
-    h+=`<div class="wcard ${on?'on':'off'}" data-inf="${esc(v.inf)}"><span class="box">${on?'✓':''}</span><div class="txt"><div class="es">${esc(v.inf)}</div><div class="en">${esc(v.en)}</div></div></div>`; });
+    const tag = state.ctense==='subj' && DISHES.includes(v.inf) ? ' <span style="font-size:10px;font-weight:700;opacity:.55">DISHES</span>' : '';
+    h+=`<div class="wcard ${on?'on':'off'}" data-inf="${esc(v.inf)}"><span class="box">${on?'✓':''}</span><div class="txt"><div class="es">${esc(v.inf)}${tag}</div><div class="en">${esc(v.en)}</div></div></div>`; });
   h+=`</div><button class="practicebtn" id="cToCover" ${incl?'':'disabled'}>Continue →</button>`;
   c.innerHTML=h;
   c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!state.cselected[el.dataset.inf]; render(); });
   c.querySelector("#cback").onclick=()=>{ state.cstep='tense'; render(); };
   c.querySelector("#cinclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=true); render(); };
   c.querySelector("#cexclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=false); render(); };
+  const dish=c.querySelector("#cDishes"); if(dish) dish.onclick=()=>{ onlyDishes(); render(); };
   c.querySelector("#cToCover").onclick=()=>{ state.cstep='coverage'; render(); };
 }
 function renderCCoverage(c){
