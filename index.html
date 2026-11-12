@@ -1506,6 +1506,57 @@ function conjugate(v){
   if(reflexive){ const o={}; for(const k in f) o[k]=_RP[k]+" "+f[k]; return o; }
   return f;
 }
+
+// The tenses the Verbs section can drill. Spanish 2 has not met the
+// subjunctive yet, so it only offers the first two.
+const TENSES = {
+  pres: { label:'Presente', emoji:'🕐', ask:'present-tense', blurb:'hablo · como · vivo' },
+  impf: { label:'Imperfecto', emoji:'🕰️', ask:'imperfect', blurb:'hablaba · comía — what used to happen' },
+  subj: { label:'Subjuntivo', emoji:'🔮', ask:'present subjunctive', blurb:'que hable · que coma — yo form, drop the o, opposite endings' },
+};
+const tensesHere = () => (state.level||3)===3 ? ['pres','impf','subj'] : ['pres','impf'];
+// Present subjunctive of any verb on the list, the way the Unit 3 notes build
+// it: the yo form, drop the -o, opposite endings (-ar → e, -er/-ir → a);
+// CAR/GAR/ZAR change spelling; DISHES are their own; boot verbs keep the boot,
+// and -ir boot verbs also change in nosotros/vosotros (durmamos, pidamos).
+const SUBJ_OWN = {
+  reír:['ría','rías','ría','riamos','riáis','rían'], sonreír:['sonría','sonrías','sonría','sonriamos','sonriáis','sonrían'],
+};
+function subjunctiveOf(v){
+  const reflexive=v.inf.endsWith('se'), base=reflexive?v.inf.slice(0,-2):v.inf;
+  let f;
+  const own = SUBJ_DISHES[base] || SUBJ_OWN[base];
+  if(own) f=Object.fromEntries(FORMS.map((k,i)=>[k, own[i]]));
+  else{
+    const present=conjugate({...v, inf:base});
+    const yoStem=String(present.yo).replace(/o$/,'');
+    const end=base.slice(-2), ar=end==='ar';
+    const E = ar ? ['e','es','e','emos','éis','en'] : ['a','as','a','amos','áis','an'];
+    const boot = v.type==='boot' || base==='jugar';
+    let plain = base.slice(0,-2);
+    if(boot && end==='ir'){
+      const ch=(v.change||'').split('-')[0];
+      const i2=plain.lastIndexOf(ch==='o'?'o':'e');
+      if(i2>=0) plain=plain.slice(0,i2)+(ch==='o'?'u':'i')+plain.slice(i2+1);
+    }
+    const spell = (stem) => !ar ? stem : stem.replace(/c$/,'qu').replace(/g$/,'gu').replace(/z$/,'c');
+    f=Object.fromEntries(FORMS.map((k,i)=>[k, spell(boot && (k==='nos'||k==='vos') ? plain : yoStem) + E[i]]));
+  }
+  if(reflexive){ const o={}; for(const k in f) o[k]=_RP[k]+" "+f[k]; return o; }
+  return f;
+}
+function imperfectOf(v){
+  const base=v.inf.replace(/se$/,'');
+  if(IMPF_IRR[base]){
+    const f=Object.fromEntries(FORMS.map((k,i)=>[k, IMPF_IRR[base][i]]));
+    if(v.inf.endsWith('se')){ const o={}; for(const k in f) o[k]=_RP[k]+" "+f[k]; return o; }
+    return f;
+  }
+  return imperf(v.inf);
+}
+function tenseForms(v, t=state.ctense){
+  return t==='subj' ? subjunctiveOf(v) : t==='impf' ? imperfectOf(v) : conjugate(v);
+}
 // The six endings. Every verb in a quiz gets asked in all six.
 const FORMS = ["yo","tu","el","nos","vos","ellos"];
 // Subjects — pronouns (ES + EN) plus real people, all mapping to a verb form.
@@ -4288,6 +4339,7 @@ function renderTypeQuiz(c){
 
 /* -------- Conjugation practice flow -------- */
 function renderConjugate(c){
+  if(state.cstep==='tense') return renderCTense(c);
   if(state.cstep==='exclude') return renderCExclude(c);
   if(state.cstep==='coverage') return renderCCoverage(c);
   if(state.cstep==='display') return renderCDisplay(c);
@@ -4300,13 +4352,24 @@ function renderCList(c){
   catVerbs().forEach(v=>{ h+=`<div class="wcard read"><div class="txt"><div class="es">${esc(v.inf)}</div><div class="en">${esc(v.en)}</div></div></div>`; });
   h+=`</div>`;
   c.innerHTML=h;
-  c.querySelector("#startC").onclick=()=>{ ensureCSelected(); state.cstep='exclude'; render(); };
+  c.querySelector("#startC").onclick=()=>{ ensureCSelected(); state.cstep='tense'; render(); };
+}
+function renderCTense(c){
+  const ts=tensesHere();
+  if(!ts.includes(state.ctense)) state.ctense='pres';
+  c.innerHTML=`<button class="back" id="cback">‹ Back</button>
+    <h2 class="ptitle">Which tense?</h2>
+    <p class="psub">Every verb you pick next is asked in this tense.</p>
+    <div class="dirlist">${ts.map(k=>{ const t=TENSES[k];
+      return `<button class="dircard${state.ctense===k?' on':''}" data-tense="${k}"><span class="di">${t.emoji}</span><div class="dtx"><div class="dt">${t.label}</div><div class="dd">${esc(t.blurb)}</div></div><span class="go">→</span></button>`; }).join('')}</div>`;
+  c.querySelector("#cback").onclick=()=>{ state.cstep=null; render(); };
+  c.querySelectorAll("[data-tense]").forEach(b=>b.onclick=()=>{ state.ctense=b.dataset.tense; state.cstep='exclude'; render(); });
 }
 function renderCExclude(c){
   ensureCSelected();
   const verbs=catVerbs(), incl=verbs.filter(cIsSel).length;
   let h=`<button class="back" id="cback">‹ Back</button>
-    <h2 class="ptitle">Which verbs?</h2>
+    <h2 class="ptitle">Which verbs? <span style="font-weight:500;opacity:.6">· ${esc(TENSES[state.ctense||'pres'].label)}</span></h2>
     <p class="psub">All in by default. Tap a verb to <b>leave it out</b>.</p>
     <div class="toolbar"><button class="btn" id="cinclAll">Select all</button><button class="btn subtle" id="cexclAll">Deselect all</button><span class="count">${incl} of ${verbs.length} in</span></div>
     <div class="wordgrid">`;
@@ -4315,7 +4378,7 @@ function renderCExclude(c){
   h+=`</div><button class="practicebtn" id="cToCover" ${incl?'':'disabled'}>Continue →</button>`;
   c.innerHTML=h;
   c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!state.cselected[el.dataset.inf]; render(); });
-  c.querySelector("#cback").onclick=()=>{ state.cstep=null; render(); };
+  c.querySelector("#cback").onclick=()=>{ state.cstep='tense'; render(); };
   c.querySelector("#cinclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=true); render(); };
   c.querySelector("#cexclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=false); render(); };
   c.querySelector("#cToCover").onclick=()=>{ state.cstep='coverage'; render(); };
@@ -4377,7 +4440,7 @@ function renderCQuiz(c){
       <div class="lbl">${s.correct} of ${s.queue.length} right on the first try</div>`;
     if(s.wrong.length){
       h+=`<div class="missed"><div class="sectionhdr">Verbs you had to retry</div>`;
-      s.wrong.forEach(it=>{ h+=`<div class="m"><span>${esc(it.subj.es)} · ${esc(it.v.inf)}</span><span>${esc(conjugate(it.v)[it.subj.form])}</span></div>`; });
+      s.wrong.forEach(it=>{ h+=`<div class="m"><span>${esc(it.subj.es)} · ${esc(it.v.inf)}</span><span>${esc(tenseForms(it.v)[it.subj.form])}</span></div>`; });
       h+=`</div>`;
     }
     h+=`<div class="fbrow">
@@ -4392,15 +4455,16 @@ function renderCQuiz(c){
     return;
   }
   const it=s.queue[s.i], v=it.v, subj=it.subj;
-  const answer=conjugate(v)[subj.form];
-  const subjTxt=it.lang==='es'?subj.es:subj.en, verbTxt=it.lang==='es'?v.inf:v.en;
+  const answer=tenseForms(v)[subj.form];
+  // The subjunctive is asked after que, the way it is always met.
+  const subjTxt=(state.ctense==='subj' ? (it.lang==='es'?'que ':'that ') : '')+(it.lang==='es'?subj.es:subj.en), verbTxt=it.lang==='es'?v.inf:v.en;
   const pct=Math.round(s.i/s.queue.length*100);
   let h=`<div class="stage">
     <div class="prog"><div class="progtxt">${s.i+1} / ${s.queue.length}</div>
       <div class="progbar"><i style="width:${pct}%"></i></div><div class="progtxt">✓ ${s.correct}</div></div>
-    <div class="qmeta">${v.type} · ${it.lang==='es'?'ES':'EN'}</div>
+    <div class="qmeta">${esc(TENSES[state.ctense||'pres'].label)} · ${v.type} · ${it.lang==='es'?'ES':'EN'}</div>
     <div class="prompt">${esc(subjTxt)} · ${esc(verbTxt)}</div>
-    <div class="askside">Type the present-tense form</div>`;
+    <div class="askside">Type the ${TENSES[state.ctense||'pres'].ask} form</div>`;
   if(s.result==='right'){
     h+=`<div class="feedback good">✓ ¡Correcto!<span class="corr">${esc(subjTxt)} · ${esc(verbTxt)} = <b>${esc(answer)}</b></span></div>
       <div class="fbrow"><button class="pill" id="next">Next →</button></div>`;
