@@ -4235,7 +4235,10 @@ function renderUnitHome(c){
   const cards=[
     ...(unit().map ? [{key:'map', ic:'🗺️', title:'Map', desc:`${MAP_COUNTRIES.length} countries · names, capitals, where they are`, cls:'allcard'}] : []),
     ...(unit().nat ? [{key:'nat', ic:'🛂', title:'Nacionalidades', desc:`${MAP_COUNTRIES.length} countries · capital, país, adjetivo`, cls:'allcard'}] : []),
-    {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:unit().map?'':'allcard'},
+    // Unit 5's big grammar topic gets its own square straight to the drills.
+    ...(grammarHere().some(g=>g.id.startsWith('s2-impf')) ? [{key:'impf', ic:'🕰️', title:'Imperfecto', desc:'Conjugate in the imperfect · -ar, -er/-ir, ser/ir/ver, your way', cls:'allcard'}] : []),
+    ...(grammarHere().some(g=>g.id==='s2-impf-irr') ? [{key:'impf-irr', ic:'👀', title:'Imperfecto: Irregulares', desc:'era · iba · veía — ser, ir, ver', cls:''}] : []),
+    {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:unit().map||grammarHere().some(g=>g.id==='s2-impf-irr')?'':'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
     {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().map(g=>g.name).join(' · ') || 'Nothing added yet'), cls:''},
     {key:'culture', ic:'🌎', title:'Culture', desc: cultureHere().length
@@ -4250,7 +4253,11 @@ function renderUnitHome(c){
       <div class="meta">${card.desc}</div>
     </div>`).join('')}</div>`;
   c.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{
-    state.view=el.dataset.go; state.session=null; render();
+    const go=el.dataset.go;
+    state.view = go.startsWith('impf') ? 'grammar' : go; state.session=null;
+    // The irregulars square opens straight into the ser/ir/ver drill's setup.
+    if(go==='impf-irr'){ const g=GRAMMAR.find(x=>x.id==='s2-impf-irr'); state.gsession=null; state.gsetup=g.id; state.impfSetup=impfSetupFor(g); }
+    render();
   });
 }
 
