@@ -1362,6 +1362,8 @@ let state = {
   vcat:"all",              // verb category: 'all' | 'regular' | 'irregular' | 'boot'
   tsession:null,           // "which type is it?" quiz over verb types
   gtopic:null,             // grammar: which drill is open
+  gfolder:null,            // grammar: an open section of drills (Unit 5's irregulars)
+  gfolderHome:false,       // …opened from the unit home, so Back goes straight there
   gsession:null,           // grammar: the running drill
   ctopic:null,             // culture: which topic is open
   fsession:null,           // culture: match-the-fact quiz
@@ -2884,6 +2886,7 @@ function impfSetupLoad(){
 // A drill like "Imperfecto: -AR" opens the same setup, ticked for its own kind.
 function impfSetupFor(g){
   const cfg=impfSetupLoad();
+  if(g.presetVerbs) return { ...cfg, verbs:[...g.presetVerbs], sentences:!!g.sentences };
   if(!g.preset) return cfg;
   return { ...cfg, verbs:IMPF_KINDS.filter(k=>g.preset.includes(k.id)).flatMap(k=>k.verbs), sentences:!!g.sentences };
 }
@@ -2898,7 +2901,9 @@ function impfCustomQueue(cfg){
   // Sentences that fit what was picked: the ser/ir/ver ones with those verbs,
   // the -ar/-er/-ir ones with regular verbs.
   const kinds = new Set(cfg.verbs.map(v=>impfKindOf(v)?.id).filter(Boolean));
-  const sent = !cfg.sentences ? [] : [...(kinds.has('irr') ? IMPF_IRR_SENTENCES : []), ...(['ar','erir','boot','yo'].some(k=>kinds.has(k)) ? IMPF_SENTENCES : [])];
+  // Only the ser/ir/ver sentences for the irregulars that were picked.
+  const irrSent = IMPF_IRR_SENTENCES.filter(q=>cfg.verbs.some(v=>IMPF_IRR[v] && q.ask.includes(`(${v})`)));
+  const sent = !cfg.sentences ? [] : [...(kinds.has('irr') ? irrSent : []), ...(['ar','erir','boot','yo'].some(k=>kinds.has(k)) ? IMPF_SENTENCES : [])];
   return shuffle([...out, ...sent]);
 }
 function impfCount(cfg){ return cfg.verbs.filter(impfKindOf).length * cfg.forms.length; }
@@ -3269,7 +3274,13 @@ const S2_GRAMMAR = [
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-erir', unit:'s2u5', name:'Imperfecto: -ER / -IR', emoji:'⏳', blurb:'comía · vivía — the same endings for both', setup:true, preset:['erir'],
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
-  { id:'s2-impf-irr', unit:'s2u5', name:'Imperfecto: Ser, Ir, Ver', emoji:'👀', blurb:'era · iba · veía — the only three irregulars', setup:true, preset:['irr'], sentences:true,
+  { id:'s2-impf-irr', unit:'s2u5', folder:'irr', name:'Los tres juntos', emoji:'👀', blurb:'ser, ir and ver mixed — era · iba · veía', setup:true, preset:['irr'], sentences:true,
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
+  { id:'s2-impf-ser', unit:'s2u5', folder:'irr', name:'Ser', emoji:'🧑', blurb:'era · eras · era · éramos · erais · eran', setup:true, presetVerbs:['ser'], sentences:true,
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
+  { id:'s2-impf-ir', unit:'s2u5', folder:'irr', name:'Ir', emoji:'🚶', blurb:'iba · ibas · iba · íbamos · ibais · iban', setup:true, presetVerbs:['ir'], sentences:true,
+    build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
+  { id:'s2-impf-ver', unit:'s2u5', folder:'irr', name:'Ver', emoji:'👀', blurb:'veía · veías · veía · veíamos · veíais · veían', setup:true, presetVerbs:['ver'], sentences:true,
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-custom', unit:'s2u5', name:'Imperfecto: Your Way', emoji:'🎛️', blurb:'pick the verbs, pronouns, boot verbs, irregulars…', setup:true,
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
@@ -3458,7 +3469,7 @@ function switchLevel(n){
   state.level = n;
   if(READY.includes(n)) useLevel(n);
   Object.assign(state, { unitIdx:0, view:"unit", section:"All", week:"All", expanded:false, pstep:null, vcat:"all",
-    tsession:null, gtopic:null, gsession:null, gsetup:null, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
+    tsession:null, gtopic:null, gsession:null, gsetup:null, gfolder:null, gfolderHome:false, ctopic:null, fsession:null, cstep:null, cselected:null, csession:null, msession:null, mpick:null, selected:null, session:null });
   render(); window.scrollTo(0,0);
 }
 function render(){ if(renderLevels()){ renderSidebar(); renderTop(); renderContent(); } save(); }
@@ -3526,10 +3537,11 @@ function renderTop(){
     const inDrill = !!(state.gsession || state.gsetup);
     const g = inDrill ? GRAMMAR.find(x=>x.id===(state.gsession ? state.gsession.drill : state.gsetup)) : null;
     t.innerHTML=`
-      <button class="backbtn" id="back">← ${inDrill ? 'Grammar' : unitLabel()}</button>
-      <div><h2>${inDrill ? esc(g.name) : 'Grammar'}</h2>
-      <div class="sub">${inDrill ? esc(g.blurb) : esc(grammarHere().map(x=>x.name).join(' · ') || 'Drills for this unit')}</div></div>`;
-    t.querySelector("#back").onclick=()=>{ if(state.gsession){ state.gsession=null; if(!state.gsetup) state.gtopic=null; } else if(state.gsetup){ state.gsetup=null; state.gtopic=null; } else state.view="unit"; render(); };
+      <button class="backbtn" id="back">← ${inDrill ? (state.gfolder ? GFOLDERS[state.gfolder].name : 'Grammar') : state.gfolder && state.gfolderHome ? unitLabel() : state.gfolder ? 'Grammar' : unitLabel()}</button>
+      <div><h2>${inDrill ? esc(g.name) : state.gfolder ? esc(GFOLDERS[state.gfolder].name) : 'Grammar'}</h2>
+      <div class="sub">${inDrill ? esc(g.blurb) : state.gfolder ? esc(GFOLDERS[state.gfolder].blurb) : esc(grammarHere().filter(x=>!x.folder).map(x=>x.name).join(' · ') || 'Drills for this unit')}</div></div>`;
+    t.querySelector("#back").onclick=()=>{ if(state.gsession){ state.gsession=null; if(!state.gsetup) state.gtopic=null; } else if(state.gsetup){ state.gsetup=null; state.gtopic=null; }
+      else if(state.gfolder){ const home=state.gfolderHome; state.gfolder=null; state.gfolderHome=false; if(home) state.view="unit"; } else state.view="unit"; render(); };
     return;
   }
   if(state.view==="culture"){
@@ -3993,8 +4005,13 @@ function renderVocabHome(c){
 /* -------- Grammar: gustar and possessives -------- */
 const grammarHere = () => GRAMMAR.filter(g => g.unit === unit().id);
 
+// Drills with a folder sit behind one card on the Grammar home — Unit 5's
+// irregulars open a section of their own with Ser, Ir and Ver apart.
+const GFOLDERS = { irr:{ name:'Imperfecto: Irregulares', emoji:'⚡', blurb:'ser · ir · ver — each on its own, or all three' } };
 function renderGrammarHome(c){
-  const drills = grammarHere();
+  const here = grammarHere();
+  const drills = state.gfolder ? here.filter(g=>g.folder===state.gfolder).sort((a,b)=>!!b.presetVerbs-!!a.presetVerbs) : here.filter(g=>!g.folder);
+  const folders = state.gfolder ? [] : [...new Set(here.map(g=>g.folder).filter(Boolean))];
   if(drills.length===0){
     c.innerHTML=`<div class="empty"><div class="em">🧩</div>No grammar drills for this unit yet.<br>Tell me the topic and I'll add one.</div>`;
     return;
@@ -4003,7 +4020,12 @@ function renderGrammarHome(c){
     <div class="hubcard bigcard" data-drill="${esc(g.id)}">
       <span class="go">→</span><span class="ic big">${g.emoji}</span>
       <h3>${esc(g.name)}</h3><div class="meta">${esc(g.blurb)}</div>
+    </div>`).join('')}${folders.map(f=>`
+    <div class="hubcard bigcard" data-gfolder="${esc(f)}">
+      <span class="go">→</span><span class="ic big">${GFOLDERS[f].emoji}</span>
+      <h3>${esc(GFOLDERS[f].name)}</h3><div class="meta">${esc(GFOLDERS[f].blurb)}</div>
     </div>`).join('')}</div>`;
+  c.querySelectorAll("[data-gfolder]").forEach(el=>el.onclick=()=>{ state.gfolder=el.dataset.gfolder; render(); });
   c.querySelectorAll("[data-drill]").forEach(el=>el.onclick=()=>{
     const g=GRAMMAR.find(x=>x.id===el.dataset.drill);
     state.gtopic=g.id;
@@ -4237,10 +4259,10 @@ function renderUnitHome(c){
     ...(unit().nat ? [{key:'nat', ic:'🛂', title:'Nacionalidades', desc:`${MAP_COUNTRIES.length} countries · capital, país, adjetivo`, cls:'allcard'}] : []),
     // Unit 5's big grammar topic gets its own square straight to the drills.
     ...(grammarHere().some(g=>g.id.startsWith('s2-impf')) ? [{key:'impf', ic:'🕰️', title:'Imperfecto', desc:'Conjugate in the imperfect · -ar, -er/-ir, ser/ir/ver, your way', cls:'allcard'}] : []),
-    ...(grammarHere().some(g=>g.id==='s2-impf-irr') ? [{key:'impf-irr', ic:'👀', title:'Imperfecto: Irregulares', desc:'era · iba · veía — ser, ir, ver', cls:''}] : []),
+    ...(grammarHere().some(g=>g.id==='s2-impf-irr') ? [{key:'impf-irr', ic:'👀', title:'Imperfecto: Irregulares', desc:'Ser · Ir · Ver — each on its own, or all three', cls:''}] : []),
     {key:'vocab', ic:'📚', title:'Vocab', desc:`${words} words · ${unit().sets.length} sets`, cls:unit().map||grammarHere().some(g=>g.id==='s2-impf-irr')?'':'allcard'},
     {key:'verbs', ic:'🔀', title:'Verbs', desc:'Verb practice', cls:''},
-    {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().map(g=>g.name).join(' · ') || 'Nothing added yet'), cls:''},
+    {key:'grammar', ic:'🧩', title:'Grammar', desc:(grammarHere().filter(g=>!g.folder).map(g=>g.name).concat([...new Set(grammarHere().map(g=>g.folder).filter(Boolean))].map(f=>GFOLDERS[f].name)).join(' · ') || 'Nothing added yet'), cls:''},
     {key:'culture', ic:'🌎', title:'Culture', desc: cultureHere().length
       ? `${cultureHere().length} topic${cultureHere().length===1?'':'s'} · ${cultureHere().reduce((a,t)=>a+t.facts.length,0)} facts`
       : 'Nothing added yet', cls:''},
@@ -4256,7 +4278,8 @@ function renderUnitHome(c){
     const go=el.dataset.go;
     state.view = go.startsWith('impf') ? 'grammar' : go; state.session=null;
     // The irregulars square opens straight into the ser/ir/ver drill's setup.
-    if(go==='impf-irr'){ const g=GRAMMAR.find(x=>x.id==='s2-impf-irr'); state.gsession=null; state.gsetup=g.id; state.impfSetup=impfSetupFor(g); }
+    state.gsession=null; state.gsetup=null; state.gfolder=null; state.gfolderHome=false;
+    if(go==='impf-irr'){ state.gfolder='irr'; state.gfolderHome=true; }
     render();
   });
 }
