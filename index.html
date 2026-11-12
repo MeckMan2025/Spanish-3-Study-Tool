@@ -1372,6 +1372,7 @@ let state = {
   vtense:null,             // Verbs: the tense picked first (pres | impf | subj)
   cstep:null,              // conjugation flow: null (list) | 'exclude' | 'coverage' | 'display' | 'quiz'
   cdisp:"es",              // prompt language: 'es' | 'en' | 'mix'
+  cforms:null,             // which pronouns the Verbs practice asks (null = load saved / all six)
   ccover:"all",            // pronouns per verb: 'all' (all six) | 'mixed' (one each)
   cselected:null,          // which verbs are IN the conjugation quiz
   csession:null,
@@ -4488,31 +4489,50 @@ function renderCExclude(c){
   const dish=c.querySelector("#cDishes"); if(dish) dish.onclick=()=>{ onlyDishes(); render(); };
   c.querySelector("#cToCover").onclick=()=>{ state.cstep='coverage'; render(); };
 }
+// Which pronouns the Verbs practice asks — any of the six, remembered.
+const CFORM_LABEL={yo:'yo', tu:'tú', el:'él / ella / usted', nos:'nosotros', vos:'vosotros', ellos:'ellos / ellas / ustedes'};
+const CFORMS_KEY='spanish-cforms';
+function cForms(){
+  if(!state.cforms){ let f=null; try{ f=JSON.parse(localStorage.getItem(CFORMS_KEY)); }catch(e){}
+    state.cforms = Array.isArray(f) && f.length && f.every(k=>FORMS.includes(k)) ? f : [...FORMS]; }
+  return FORMS.filter(k=>state.cforms.includes(k));
+}
+function setCForms(f){ state.cforms=f; try{ localStorage.setItem(CFORMS_KEY, JSON.stringify(f)); }catch(e){} }
 function renderCCoverage(c){
-  const n=cIncluded().length;
+  const n=cIncluded().length, forms=cForms(), k=forms.length, sub=state.ctense==='subj'?'que ':'';
   const opts=[
-    ['all','🔁','All pronouns',`Every verb six times, once per ending — yo, tú, él, nosotros, vosotros, ellos. ${n*6} question${n*6===1?'':'s'}.`],
-    ['mixed','🎲','Mixed review',`One pronoun per verb, dealt evenly across the six endings. ${n} question${n===1?'':'s'}.`],
+    ['all','🔁', k===6?'All pronouns':'Every pronoun picked',`Every verb ${k} time${k===1?'':'s'}, once per pronoun. ${n*k} question${n*k===1?'':'s'}.`],
+    ['mixed','🎲','Mixed review',`One pronoun per verb, dealt evenly across the ${k===6?'six':'ones picked'}. ${n} question${n===1?'':'s'}.`],
   ];
   c.innerHTML=`<button class="back" id="cback">‹ Back</button>
-    <h2 class="ptitle">How many pronouns per verb?</h2>
-    <p class="psub">All pronouns drills every ending. Mixed review is the quick pass.</p>
-    <div class="dirlist">${opts.map(([k,ic,t,d])=>`<button class="dircard${state.ccover===k?' on':''}" data-cover="${k}"><span class="di">${ic}</span><div class="dtx"><div class="dt">${t}</div><div class="dd">${d}</div></div><span class="go">→</span></button>`).join('')}</div>`;
+    <h2 class="ptitle">Which pronouns?</h2>
+    <p class="psub">Tap to leave one out. Only these get asked.</p>
+    <div class="toolbar"><button class="btn" id="cfAll">All six</button><button class="btn subtle" id="cfSing">Singular</button><button class="btn subtle" id="cfPlur">Plural</button><button class="btn subtle" id="cfNoVos">No vosotros</button><span class="count">${k} of 6</span></div>
+    <div class="wordgrid">${FORMS.map(f=>{ const on=forms.includes(f);
+      return `<div class="wcard ${on?'on':'off'}" data-cform="${f}"><span class="box">${on?'✓':''}</span><div class="txt"><div class="es">${esc(sub+CFORM_LABEL[f])}</div></div></div>`; }).join('')}</div>
+    <h2 class="ptitle" style="margin-top:18px">How many per verb?</h2>
+    <div class="dirlist">${opts.map(([key,ic,t,d])=>`<button class="dircard${state.ccover===key?' on':''}" data-cover="${key}" ${k?'':'disabled style="opacity:.4"'}><span class="di">${ic}</span><div class="dtx"><div class="dt">${t}</div><div class="dd">${k?d:'Pick at least one pronoun first.'}</div></div><span class="go">→</span></button>`).join('')}</div>`;
   c.querySelector("#cback").onclick=()=>{ state.cstep='exclude'; render(); };
-  c.querySelectorAll("[data-cover]").forEach(b=>b.onclick=()=>{ state.ccover=b.dataset.cover; state.cstep='display'; render(); });
+  c.querySelectorAll("[data-cform]").forEach(el=>el.onclick=()=>{ const f=el.dataset.cform, cur=cForms();
+    setCForms(cur.includes(f) ? cur.filter(x=>x!==f) : [...cur, f]); render(); });
+  c.querySelector("#cfAll").onclick=()=>{ setCForms([...FORMS]); render(); };
+  c.querySelector("#cfSing").onclick=()=>{ setCForms(['yo','tu','el']); render(); };
+  c.querySelector("#cfPlur").onclick=()=>{ setCForms(['nos','vos','ellos']); render(); };
+  c.querySelector("#cfNoVos").onclick=()=>{ setCForms(FORMS.filter(f=>f!=='vos')); render(); };
+  c.querySelectorAll("[data-cover]").forEach(b=>b.onclick=()=>{ if(!cForms().length) return; state.ccover=b.dataset.cover; state.cstep='display'; render(); });
 }
 function renderCDisplay(c){
   const opts=[['es','🇪🇸','Spanish','Prompts like "ella · preferir"'],['en','🇬🇧','English','Prompts like "she · to prefer"'],['mix','🔀','Mix','A random mix of both']];
   c.innerHTML=`<button class="back" id="cback">‹ Back</button>
     <h2 class="ptitle">Show the prompts in…</h2>
-    <p class="psub">You always type the Spanish conjugation. ${state.ccover==='all'?'Each verb comes up six times — once for every ending.':'One pronoun per verb.'}</p>
+    <p class="psub">You always type the Spanish conjugation. ${state.ccover==='all'?`Each verb comes up once for every pronoun you picked (${cForms().length}).`:'One pronoun per verb.'}</p>
     <div class="dirlist">${opts.map(([k,ic,t,d])=>`<button class="dircard" data-disp="${k}"><span class="di">${ic}</span><div class="dtx"><div class="dt">${t}</div><div class="dd">${d}</div></div><span class="go">→</span></button>`).join('')}</div>`;
   c.querySelector("#cback").onclick=()=>{ state.cstep='coverage'; render(); };
   c.querySelectorAll("[data-disp]").forEach(b=>b.onclick=()=>{ state.cdisp=b.dataset.disp; startCQuiz(); state.cstep='quiz'; render(); });
 }
 function startCQuiz(){
   const pickLang = () => state.cdisp==='mix' ? (Math.random()<0.5?'es':'en') : state.cdisp;
-  const verbs = cIncluded();
+  const verbs = cIncluded(), forms = cForms().length ? cForms() : [...FORMS];
   let q;
   if(state.ccover==='mixed'){
     // One pronoun per verb. The ending is dealt from a shuffled cycle of all six
@@ -4520,7 +4540,7 @@ function startCQuiz(){
     // endings instead of leaning on whichever ones have the most subjects.
     let cycle=[];
     q = shuffle(verbs).map(v=>{
-      if(!cycle.length) cycle=shuffle(FORMS);
+      if(!cycle.length) cycle=shuffle(forms);
       const form=cycle.pop();
       return { v, subj: pickSubj(form), lang: pickLang() };
     });
@@ -4528,11 +4548,11 @@ function startCQuiz(){
     // Every verb is asked once per ending — yo, tú, él, nosotros, vosotros, ellos —
     // with a different subject drawn from that ending's group each time.
     const perVerb = verbs.map(v =>
-      shuffle(FORMS).map(form => ({ v, subj: pickSubj(form), lang: pickLang() }))
+      shuffle(forms).map(form => ({ v, subj: pickSubj(form), lang: pickLang() }))
     );
     // Deal one round at a time so the same verb never comes up back-to-back.
     q=[];
-    for(let r=0; r<FORMS.length; r++) shuffle(perVerb.map(list=>list[r])).forEach(item=>q.push(item));
+    for(let r=0; r<forms.length; r++) shuffle(perVerb.map(list=>list[r])).forEach(item=>q.push(item));
   }
   state.csession={ queue:q, i:0, correct:0, wrong:[], result:null, curWrong:false };
 }
