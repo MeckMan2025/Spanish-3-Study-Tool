@@ -4362,12 +4362,38 @@ function renderConjugate(c){
   if(state.cstep==='quiz') return renderCQuiz(c);
   return renderCList(c);
 }
+// A verb's six forms in the usual chart shape — singular down the left,
+// plural down the right — in the tense being looked at. Boot verbs light the
+// four forms inside the boot (present and subjunctive; nothing changes in the
+// imperfect).
+function conjChart(v, t){
+  const f=tenseForms(v, t);
+  const rows=[['yo','yo',true],['tú','tu',true],['él/ella','el',true],['nosotros','nos',false],['vosotros','vos',false],['ellos','ellos',true]];
+  const boot = v.type==='boot' && t!=='impf';
+  return `<div class="conjgrid">${[0,3,1,4,2,5].map(i=>{ const [label,key,inBoot]=rows[i];
+    return `<div class="conjcell${boot && inBoot?' inboot':''}"><div class="who">${(t==='subj'?'que ':'')+label}</div><div class="form">${esc(f[key])}</div></div>`; }).join('')}</div>`;
+}
+// The tense the dropdowns show, as small buttons above a list.
+function tensePills(){
+  const ts=tensesHere();
+  if(!ts.includes(state.cview)) state.cview=ts.includes(state.ctense)?state.ctense:'pres';
+  return `<div class="mcounts" style="margin:4px 0 10px">${ts.map(k=>`<button class="pill ${state.cview===k?'':'ghost'}" data-cview="${k}">${TENSES[k].emoji} ${TENSES[k].label}</button>`).join('')}</div>`;
+}
+function wireTensePills(c){ c.querySelectorAll("[data-cview]").forEach(b=>b.onclick=()=>{ state.cview=b.dataset.cview; render(); }); }
+const openSet = () => (state.copen = state.copen || {});
 function renderCList(c){
   ensureCSelected();
-  let h=`<button class="practicebtn" id="startC">📝 Practice conjugations</button><div class="wordgrid">`;
-  catVerbs().forEach(v=>{ h+=`<div class="wcard read"><div class="txt"><div class="es">${esc(v.inf)}</div><div class="en">${esc(v.en)}</div></div></div>`; });
+  const open=openSet();
+  let h=`<button class="practicebtn" id="startC">📝 Practice conjugations</button>
+    <p class="psub" style="margin-top:12px">Tap a verb to see all six forms in:</p>${tensePills()}<div class="wordgrid">`;
+  catVerbs().forEach(v=>{ const on=!!open[v.inf];
+    h+=`<div class="wcard read" data-open="${esc(v.inf)}" style="cursor:pointer${on?';grid-column:1/-1':''}"><div class="txt" style="width:100%">
+      <div class="es" style="display:flex;justify-content:space-between;gap:6px">${esc(v.inf)}<span style="opacity:.5">${on?'▴':'▾'}</span></div><div class="en">${esc(v.en)}</div>
+      ${on?conjChart(v, state.cview):''}</div></div>`; });
   h+=`</div>`;
   c.innerHTML=h;
+  wireTensePills(c);
+  c.querySelectorAll("[data-open]").forEach(el=>el.onclick=()=>{ open[el.dataset.open]=!open[el.dataset.open]; render(); });
   c.querySelector("#startC").onclick=()=>{ ensureCSelected(); state.cstep='tense'; render(); };
 }
 function renderCTense(c){
@@ -4396,10 +4422,14 @@ function renderCExclude(c){
     <div class="wordgrid">`;
   verbs.forEach(v=>{ const on=cIsSel(v);
     const tag = state.ctense==='subj' && DISHES.includes(v.inf) ? ' <span style="font-size:10px;font-weight:700;opacity:.55">DISHES</span>' : '';
-    h+=`<div class="wcard ${on?'on':'off'}" data-inf="${esc(v.inf)}"><span class="box">${on?'✓':''}</span><div class="txt"><div class="es">${esc(v.inf)}${tag}</div><div class="en">${esc(v.en)}</div></div></div>`; });
+    const shown=!!openSet()[v.inf];
+    h+=`<div class="wcard ${on?'on':'off'}" data-inf="${esc(v.inf)}"${shown?' style="grid-column:1/-1"':''}><span class="box">${on?'✓':''}</span><div class="txt" style="width:100%">
+      <div class="es" style="display:flex;justify-content:space-between;gap:6px"><span>${esc(v.inf)}${tag}</span><button class="pill ghost" data-peek="${esc(v.inf)}" title="See all six forms" style="padding:0 8px;font-size:12px">${shown?'▴':'▾'}</button></div>
+      <div class="en">${esc(v.en)}</div>${shown?conjChart(v, state.ctense||'pres'):''}</div></div>`; });
   h+=`</div><button class="practicebtn" id="cToCover" ${incl?'':'disabled'}>Continue →</button>`;
   c.innerHTML=h;
-  c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!state.cselected[el.dataset.inf]; render(); });
+  c.querySelectorAll(".wcard[data-inf]").forEach(el=>el.onclick=()=>{ state.cselected[el.dataset.inf]=!cIsSel({inf:el.dataset.inf}); render(); });
+  c.querySelectorAll("[data-peek]").forEach(b=>b.onclick=(e)=>{ e.stopPropagation(); const o=openSet(); o[b.dataset.peek]=!o[b.dataset.peek]; render(); });
   c.querySelector("#cback").onclick=()=>{ state.cstep='tense'; render(); };
   c.querySelector("#cinclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=true); render(); };
   c.querySelector("#cexclAll").onclick=()=>{ verbs.forEach(v=>state.cselected[v.inf]=false); render(); };
