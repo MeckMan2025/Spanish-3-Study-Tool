@@ -4262,12 +4262,19 @@ function renderVerbHome(c){
       <span class="go">→</span><span class="ic big">${b.ic}</span>
       <h3>${VCAT_LABEL[b.cat]}</h3><div class="meta">${n} verb${n===1?'':'s'}</div>
     </div>`;}).join('')}
+    ${(state.level||3)===3 && VERBS_CONJ.some(v=>v.inf==='dar') ? `<div class="hubcard bigcard" data-dishes-home>
+      <span class="go">→</span><span class="ic big">🍽️</span>
+      <h3>DISHES (subjuntivo)</h3><div class="meta">dé · haya · sea · esté · sepa · vaya</div>
+    </div>` : ''}
     <div class="hubcard bigcard" data-type-quiz>
       <span class="go">→</span><span class="ic big">🔎</span>
       <h3>Which type is it?</h3><div class="meta">${VERBS_CONJ.length} verbs · regular, boot or irregular</div>
     </div></div>`;
   c.querySelectorAll("[data-vcat]").forEach(el=>el.onclick=()=>{ state.vcat=el.dataset.vcat; state.view='conjugate'; state.cstep=null; state.csession=null; render(); });
   c.querySelector("[data-type-quiz]").onclick=()=>{ startTypeQuiz(); render(); };
+  // Straight into the six subjunctive irregulars: pick the pronouns and go.
+  const dh=c.querySelector("[data-dishes-home]");
+  if(dh) dh.onclick=()=>{ state.vcat='all'; state.ctense='subj'; state.view='conjugate'; state.csession=null; onlyDishes(); state.cstep='coverage'; render(); };
 }
 
 /* -------- "Which type is it?" — regular / boot / irregular -------- */
