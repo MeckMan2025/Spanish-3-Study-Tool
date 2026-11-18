@@ -2934,6 +2934,84 @@ const IMPF_SENTENCES = [
   fill('A menudo yo ___ (abrir) la ventana para no tener tanto calor.','abría','Yo, -ir: -ía. "A menudo" signals the imperfect.'),
 ];
 
+// Unit 5 study guide (the class sheet says "Sp 2: Unit 4 Study Guide"): Actividades C–H.
+const GUIDE_D = [
+  ['De niño, mis amigos y yo ___ (reunirse) en la guardería infantil.','nos reuníamos','Nosotros, reflexive: nos + -íamos. Reunirse keeps the ú-stem only in the present; here it is reuníamos.'],
+  ['Nosotros ___ (ir) allí porque nuestros padres trabajaban.','íbamos','Ir is irregular: iba, ibas, iba, íbamos, ibais, iban.'],
+  ['Nuestros padres ___ (trabajar) durante el día.','trabajaban','Ellos, -ar: -aban.'],
+  ['La guardería infantil ___ (tener) un patio de recreo y muchos juguetes.','tenía','Ella (la guardería), -er: -ía.'],
+  ['Generalmente, mis amigos, Mariana y Alejandro, ___ (estar) conmigo.','estaban','Ellos, -ar: -aban.'],
+  ['…pero a veces ___ (hacer) actividades diferentes.','hacían','Ellos (Mariana y Alejandro), -er: -ían.'],
+  ['Mariana siempre ___ (saltar) a la cuerda.','saltaba','Ella, -ar: -aba.'],
+  ['Alejandro ___ (jugar) con su tren eléctrico.','jugaba','Él, -ar: -aba. No stem change in the imperfect.'],
+  ['Yo ___ (coleccionar) los osos de peluche.','coleccionaba','Yo, -ar: -aba.'],
+  ['Después de jugar por las mañanas, nosotros ___ (almorzar) en la cafetería.','almorzábamos','Nosotros, -ar: -ábamos — accent on the á. No o→ue change in the imperfect.'],
+  ['Nunca ___ (ser) traviesos allí.','éramos','Nosotros: ser is irregular — era, eras, era, éramos, erais, eran.'],
+  ['…y por lo general ___ (portarse) bien.','nos portábamos','Nosotros, reflexive: nos + -ábamos.'],
+  ['Durante las tardes, Alejandro y Mariana ___ (querer) relajarse…','querían','Ellos, -er: -ían. No e→ie change in the imperfect.'],
+  ['…porque ___ (estar) cansados.','estaban','Ellos, -ar: -aban.'],
+  ['Siempre ___ (ver) una película en la televisión…','veían','Ellos: ver keeps the e — veía, veías, veía, veíamos, veíais, veían.'],
+  ['…y después ___ (dormir).','dormían','Ellos, -ir: -ían. No o→ue change in the imperfect.'],
+  ['¿Cómo ___ (pasar) tiempo tú…','pasabas','Tú, -ar: -abas.'],
+  ['…cuando ___ (ser) niño?','eras','Tú: ser → eras.'],
+].map(([a,b,c])=>fill(a,b,c));
+
+const GUIDE_E = [
+  ['Mis hermanos y yo siempre ___ (ir / ver) al patio de recreo después de las clases.','íbamos','"Al patio" = going somewhere → ir. Nosotros: íbamos.'],
+  ['Ana y Elena nunca ___ (obedecer / ofrecer) sus muñecas a los otros niños.','ofrecían','You offer (ofrecer) dolls to other kids. Ellas: ofrecían.'],
+  ['Rosa y tú ___ (coleccionar / permitir) muchos osos de peluche.','coleccionaban / coleccionabais','You collect teddy bears. Rosa y tú = ustedes (coleccionaban) or vosotros (coleccionabais).'],
+  ['De vez en cuando, yo ___ (comer / beber) mi comida favorita: las galletas.','comía','You eat cookies. Yo, -er: comía.'],
+  ['Tú ___ (felicitar / llorar) cuando no comías el helado.','llorabas','No ice cream → you cried. Tú: llorabas.'],
+  ['De niño, yo ___ (ser / estar) muy obediente. Siempre obedecía las reglas.','era','A personality trait → ser. Yo: era.'],
+  ['Mis amigos y yo ___ (saltar / dar) regalos para los cumpleaños.','dábamos','You give (dar) gifts. Nosotros: dábamos.'],
+  ['Mis abuelos ___ (vivir / salir) en un apartamento muy grande y elegante.','vivían','You live in an apartment. Ellos: vivían.'],
+  ['Los chicos nunca ___ (portarse / llevarse) bien. Siempre mentían a sus padres.','se portaban','They lied → never behaved well. Ellos, reflexive: se portaban.'],
+  ['Mi hermana ___ (llorar / ver) el programa de Paw Patrol cada sábado.','veía','You watch a show. Ella: veía.'],
+].map(([a,b,c])=>fill(a,b,c));
+
+const GUIDE_F = [
+  ['Tengo un ___ como mascota. Se llama Oliver. Es muy obediente y le gusta dormir mucho.','gato','cat = el gato.'],
+  ['Por lo general, en el ___, saltaba a la cuerda con mis amigas o jugaba el juego de tag.','patio de recreo','playground = el patio de recreo.'],
+  ['Siempre dormía con mi ___ cuando era niña.','oso de peluche','teddy bear = el oso de peluche.'],
+  ['Me gusta pasar tiempo con mi familia. Mis ___ son muy cariñosos, pero mi miembro favorito es mi abuela.','parientes','relatives = los parientes.'],
+  ['Con las ___, puedo tener una colección de los estados o países diferentes.','monedas','coins = las monedas (plural after "las").'],
+  ['Mis amigas y yo jugábamos siempre con las ___. ¡Tenían vestidos bonitos!','muñecas','dolls = las muñecas (plural after "las").'],
+  ['La ___ es un animal que vive en África; tiene rayas negras y blancas.','cebra','zebra = la cebra.'],
+  ['La película favorita de mi familia se llama Jurassic Park. Tiene muy ___ grandes y verdes.','dinosaurios','dinosaurs = los dinosaurios.'],
+  ['Me gusta ir a los desfiles o celebrar los días festivos con los ___. Son muy bonitos y los colores son muy brillantes en el cielo.','fuegos artificiales','fireworks = los fuegos artificiales.'],
+  ['Los ___ viven en el frío, y son los mejores personajes en la película de Madagascar.','pingüinos','penguins = los pingüinos — keep the ü.'],
+].map(([a,b,c])=>({ ask:a, hint:'vocab word in Spanish', answer:b, why:c }));
+
+const GUIDE_G = [
+  ['Los estudiantes dicen "por favor" y "gracias," y son simpáticos con todo el mundo. Son ___.','bien educados','well-behaved → bien educado, plural masculine: bien educados.'],
+  ['Magdalena molesta a los otros niños en el patio de recreo. Ella es ___.','traviesa','mischievous → travieso, feminine: traviesa.'],
+  ['Juanito comparte sus juguetes con los otros niños en la guardería infantil. Es ___.','generoso','generous → generoso (Juanito is masculine singular).'],
+  ['A Mariana no le gusta hablar ni con los otros niños ni con su profe. Ella es ___.','tímida','shy → tímido, feminine: tímida.'],
+  ['Jorge y Alejandro siempre escuchan las reglas en la escuela. Son ___.','obedientes','obedient → obediente, plural: obedientes (same for boys and girls).'],
+  ['Mi hermano siempre recibe lo que quiere. Mis padres nunca le dicen "no". Él es muy ___.','consentido','spoiled → consentido (masculine singular).'],
+].map(([a,b,c])=>({ ask:a, hint:'adjective — agreement counts!', answer:b, why:c }));
+
+const _ic = (opts, icons) => opts.map((o,i)=>[o, icons[i]]);
+const GUIDE_C = [
+  { ask:'¿Cuántas colecciones tenía Sierra?', answer:'Tenía dos colecciones.', choices:_ic(['No tenía ninguna colección.','Tenía una colección.','Tenía dos colecciones.'],['0️⃣','1️⃣','2️⃣']), why:'"De niña, yo tenía dos colecciones": dinosaurios y pelotas.' },
+  { ask:'¿Qué coleccionaba Linda de niña?', answer:'los osos de peluche', choices:_ic(['los muñecos','los osos de peluche','las pelotas','las muñecas'],['🦸','🧸','⚽','🪆']), why:'"Yo coleccionaba los osos de peluche."' },
+  { ask:'¿Qué hacía Linda con cosas de su colección?', answer:'dormía', choices:_ic(['se peleaba','veía programas','comía','dormía'],['🥊','📺','🍽️','😴']), why:'"Dormía todas las noches con todos los osos."' },
+  { ask:'Santana tiene muchas cosas en su colección ahora.', answer:'falso', choices:_ic(['cierto','falso','no se dice'],['✅','❌','🤷']), why:'"No tengo muñecos ahora" — her brother has some in his closet.' },
+  { ask:'How many items does Linda have in her collection now?', answer:'two', choices:_ic(['none','two','forty','more than forty'],['0️⃣','2️⃣','4️⃣','➕']), why:'"Tenía más de cuarenta osos. Ahora solamente tengo dos."' },
+  { ask:'What is Santana going to do after this conversation?', answer:'go home and see if her brother knows where the action figures are', choices:_ic(['watch cartoons with her brother','go home and see if her brother knows where the action figures are','buy new action figures','play with dinosaurs'],['📺','🏠','🛒','🦖']), why:'"Pienso que voy a casa y ver si mi hermano sabe dónde están."' },
+].map(it=>({ hint:'Las colecciones — reading', ...it }));
+
+const _CON = [
+  [['¡Ni loco/a!','Tener la sartén por el mango','Ser pan comido','Meter la pata','Estar de mala leche'],['🤪','🍳','🍞','🦶','😠'],
+    [['Not in a million years. No way!',0],['To have control of the situation.',1],["It's a piece of cake.",2],['To put your foot in it.',3],['To be in a bad mood.',4]]],
+  [['La Isla de Ometepe','xocoatl','el béisbol','El Yunque','Monteverde'],['🌋','🍫','⚾','🌴','☁️'],
+    [['A volcanic island in Lake Nicaragua.',0],['The Aztec word for chocolate. It was used as a drink and medicine.',1],['A very important part of the culture in El Caribe.',2],['A tropical forest in Puerto Rico where you can hike and swim and observe wildlife.',3],['A cloud forest in Costa Rica known for its biodiversity and zip-lining.',4]]],
+  [['Pachamanca','Valle de Viñales','El tren de las nubes','Medellín','El Lago Atitlán'],['🍲','🚬','🚂','🌸','🏞️'],
+    [['A dish made in Peru cooked in the earth.',0],['You can visit tobacco plantations in this place in Cuba.',1],['Go to Argentina to travel 4000 meters above sea level.',2],['A place in Colombia where, in August, you can see the Flower Festival.',3],['Guatemala has a body of water surrounded by volcanoes.',4]]],
+];
+const GUIDE_H = _CON.flatMap(([opts, icons, qs]) => qs.map(([ask,i]) =>
+  ({ ask, hint:'¡Conecta! — which one?', answer:opts[i], choices:_ic(opts, icons), why:`${opts[i]}: ${ask}` })));
+
 // Present perfect (Unit 7): haber + past participle.
 const HABER = {yo:'he',tu:'has',el:'ha',nos:'hemos',vos:'habéis',ellos:'han'};
 const PARTICIPLES = { abrir:'abierto', cubrir:'cubierto', decir:'dicho', devolver:'devuelto', escribir:'escrito', freír:'frito',
@@ -3288,6 +3366,20 @@ const S2_GRAMMAR = [
     build(){ return impfCustomQueue(state.impfSetup || impfSetupLoad()); } },
   { id:'s2-impf-practice', unit:'s2u5', name:'Más Práctica', emoji:'📝', blurb:'the worksheet sentences, -ar and -er/-ir mixed',
     build(){ return shuffle([...IMPF_SENTENCES]); } },
+  { id:'s2-guide-d', unit:'s2u5', folder:'guide', name:'D · El párrafo', emoji:'📖', blurb:'the daycare story, 18 imperfect blanks',
+    build(){ return [...GUIDE_D]; } },
+  { id:'s2-guide-e', unit:'s2u5', folder:'guide', name:'E · Escoge el verbo', emoji:'🔀', blurb:'pick the right verb AND conjugate it',
+    build(){ return shuffle([...GUIDE_E]); } },
+  { id:'s2-guide-f', unit:'s2u5', folder:'guide', name:'F · Vocabulario', emoji:'🧸', blurb:'gato · cebra · fuegos artificiales…',
+    build(){ return shuffle([...GUIDE_F]); } },
+  { id:'s2-guide-g', unit:'s2u5', folder:'guide', name:'G · Adjetivos', emoji:'🧲', blurb:'bien educados · traviesa · tímida — agreement counts',
+    build(){ return shuffle([...GUIDE_G]); } },
+  { id:'s2-guide-c', unit:'s2u5', folder:'guide', name:'C · Las colecciones', emoji:'🦖', blurb:'Linda, Sierra y Santana — reading questions',
+    build(){ return [...GUIDE_C]; } },
+  { id:'s2-guide-h', unit:'s2u5', folder:'guide', name:'H · ¡Conecta!', emoji:'🌎', blurb:'frases del día and the culture places',
+    build(){ return shuffle([...GUIDE_H]); } },
+  { id:'s2-guide-all', unit:'s2u5', folder:'guide', name:'Practice Test', emoji:'📝', blurb:'C through H mixed — the whole study guide',
+    build(){ return shuffle([...GUIDE_C, ...GUIDE_D, ...GUIDE_E, ...GUIDE_F, ...GUIDE_G, ...GUIDE_H]); } },
   { id:'s2-pret-reg', unit:'s2u8', name:'Pretérito Regular', emoji:'⏮️', blurb:'-é -aste -ó · -í -iste -ió',
     build(){ return conjDrill(PRET_REG_VERBS, pretReg, v=>v, '-ar: é, aste, ó, amos, asteis, aron. -er/-ir: í, iste, ió, imos, isteis, ieron.'); } },
   { id:'s2-twins', unit:'s2u8', name:'Ser, Ir, Ver, Dar', emoji:'👯', blurb:'fui · vi · di — plus gustó and hubo',
@@ -3422,6 +3514,67 @@ const S2_CULTURE = [
     'An animal important to the scientific community, with the ability to regenerate parts of its body.',
     'A salamander from the lakes near Mexico City.',
     'It can grow back legs, its tail, and even parts of its heart.',
+  ]},
+  // Unit 5: the Lunes–Viernes packets and the study guide's ¡Conecta!
+  { id:'u5-medellin', unit:'s2u5', group:'Lugares', name:'Medellín', emoji:'🌸', facts:[
+    'A modern, innovative city in Colombia, in a mountainous area.',
+    'You can ride a cable car (tranvía) up the mountains and see the whole city.',
+    'Home of the Feria de las Flores (Flower Festival) every August.',
+    'It has parks, museums and art in the streets, and good weather all year.',
+  ]},
+  { id:'u5-ometepe', unit:'s2u5', group:'Lugares', name:'La Isla de Ometepe', emoji:'🌋', facts:[
+    'A volcanic island in Lake Nicaragua.',
+    'The island has two volcanoes.',
+    'You can explore nature, swim and walk on trails (senderos).',
+    'A calm, beautiful island where you can learn about the local culture.',
+  ]},
+  { id:'u5-atitlan', unit:'s2u5', group:'Lugares', name:'El Lago Atitlán', emoji:'🏞️', facts:[
+    'A lake in Guatemala surrounded by volcanoes and Mayan towns.',
+    'Many people consider it one of the most beautiful lakes in the world.',
+    'Activities: kayaking, hiking and local markets — popular with tourists.',
+  ]},
+  { id:'u5-vinales', unit:'s2u5', group:'Lugares', name:'Valle de Viñales', emoji:'🐎', facts:[
+    'A valley in Cuba with mountains, caves and tobacco plantations.',
+    'You can ride horses, visit farms and explore caves.',
+    'Traditional houses have palm-leaf roofs; a rural, picturesque place.',
+  ]},
+  { id:'u5-tren-nubes', unit:'s2u5', group:'Lugares', name:'El tren de las nubes', emoji:'🚂', facts:[
+    'A special train in Argentina, in the province of Salta — "the train of the clouds."',
+    'It travels more than 4,000 meters above sea level.',
+    'It crosses very tall mountains on bridges, with spectacular landscapes.',
+  ]},
+  { id:'u5-monteverde', unit:'s2u5', group:'Lugares', name:'Monteverde', emoji:'☁️', facts:[
+    'A cloud forest in Costa Rica.',
+    'Known for its biodiversity and zip-lining.',
+  ]},
+  { id:'u5-yunque', unit:'s2u5', group:'Lugares', name:'El Yunque', emoji:'🌴', facts:[
+    'A tropical forest in Puerto Rico.',
+    'You can hike, swim and observe wildlife there.',
+  ]},
+  { id:'u5-mala-leche', unit:'s2u5', group:'Dichos', name:'Estar de mala leche', emoji:'😠', facts:[ 'To be in a bad mood.' ]},
+  { id:'u5-pan-comido', unit:'s2u5', group:'Dichos', name:'Ser pan comido', emoji:'🍞', facts:[ "It's a piece of cake — something easy to do." ]},
+  { id:'u5-meter-pata', unit:'s2u5', group:'Dichos', name:'Meter la pata', emoji:'🦶', facts:[ 'To put your foot in it — to make a mistake.' ]},
+  { id:'u5-ni-loco', unit:'s2u5', group:'Dichos', name:'¡Ni loco/a!', emoji:'🤪', facts:[ 'Not in a million years. No way!' ]},
+  { id:'u5-sarten', unit:'s2u5', group:'Dichos', name:'Tener la sartén por el mango', emoji:'🍳', facts:[ 'To have control of the situation.' ]},
+  { id:'u5-xocoatl', unit:'s2u5', group:'Tradiciones y Leyendas', name:'El chocolate (xocoatl)', emoji:'🍫', facts:[
+    'Chocolate comes from Mexico; the word comes from the Aztec word "xocoatl."',
+    'The Aztecs used cacao as a drink and as medicine.',
+    'Mexico has chocolate festivals in different regions; it is part of its food culture.',
+  ]},
+  { id:'u5-pachamanca', unit:'s2u5', group:'Tradiciones y Leyendas', name:'La pachamanca', emoji:'🍲', facts:[
+    'A special dish from Peru cooked in the earth (underground).',
+    'Families make big meals in November; rice with chicken, empanadas and tamales are common.',
+  ]},
+  { id:'u5-beisbol', unit:'s2u5', group:'Tradiciones y Leyendas', name:'El béisbol', emoji:'⚾', facts:[ 'A very important part of the culture in El Caribe.' ]},
+  { id:'u5-multigen', unit:'s2u5', group:'Tradiciones y Leyendas', name:'Las familias multigeneracionales', emoji:'👨‍👩‍👧‍👦', facts:[
+    'Grandparents, parents, kids and sometimes aunts, uncles or cousins live in one house.',
+    'Common in many Latin countries; they celebrate birthdays, cook and share traditions.',
+    'Grandparents help with the kids and teach family history; they show unity and respect.',
+  ]},
+  { id:'u5-tradiciones', unit:'s2u5', group:'Tradiciones y Leyendas', name:'Las tradiciones familiares', emoji:'🎂', facts:[
+    'Special Sunday dinners, games, movies or outings — every family has its own.',
+    'Traditions create memories and strengthen family ties.',
+    'They pass from one generation to the next, like cooking a special recipe or singing a song.',
   ]},
 ];
 // Each level's material; useLevel() swaps it into DATA / GRAMMAR / CULTURE / VERBS_CONJ.
@@ -4023,7 +4176,7 @@ const grammarHere = () => GRAMMAR.filter(g => g.unit === unit().id);
 
 // Drills with a folder sit behind one card on the Grammar home — Unit 5's
 // irregulars open a section of their own with Ser, Ir and Ver apart.
-const GFOLDERS = { irr:{ name:'Imperfecto: Irregulares', emoji:'⚡', blurb:'ser · ir · ver — each on its own, or all three' } };
+const GFOLDERS = { guide:{ name:'Study Guide', emoji:'📝', blurb:'the test study guide, Actividades C–H' }, irr:{ name:'Imperfecto: Irregulares', emoji:'⚡', blurb:'ser · ir · ver — each on its own, or all three' } };
 function renderGrammarHome(c){
   const here = grammarHere();
   const drills = state.gfolder ? here.filter(g=>g.folder===state.gfolder).sort((a,b)=>!!b.presetVerbs-!!a.presetVerbs) : here.filter(g=>!g.folder);
